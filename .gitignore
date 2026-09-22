@@ -1,0 +1,16 @@
+node_modules
+dist
+.next
+out
+coverage
+.env
+.env.local
+*.log
+.DS_Store
+tmp
+kits.json
+/tmp/
+packages/*/dist
+backend/dist
+frontend/.next
+frontend/out
