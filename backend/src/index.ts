@@ -5,6 +5,8 @@ import helmet from "helmet";
 import { connectDb } from "./db.js";
 import { buildSession } from "./middleware/session.js";
 import authRoutes from "./routes/auth.js";
+import kitsRoutes from "./routes/kits.js";
+import kitsBatchRoutes from "./routes/kitsBatch.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -27,13 +29,16 @@ app.use(buildSession(MONGODB_URI, SESSION_SECRET));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true, at: new Date().toISOString() }));
 app.use("/api/auth", authRoutes);
-
-// stub kits route for Phase 0 so FE can proxy
-app.get("/api/kits", (_req, res) => res.json([]));
+app.use("/api/kits", kitsBatchRoutes);
+app.use("/api/kits", kitsRoutes);
 
 app.use((err: any, _req: any, res: any, _next: any) => {
   console.error(err);
   res.status(500).json({ code: "SCHEMA_INVALID", message: err?.message || "Internal error" });
+});
+
+process.on("unhandledRejection", (e: any) => {
+  console.error("[unhandledRejection]", e?.message || e);
 });
 
 const PORT = Number(process.env.PORT || 4000);
