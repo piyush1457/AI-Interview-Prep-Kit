@@ -9,6 +9,8 @@ const kitSchema = new mongoose.Schema(
     steps: [{ step: String, at: Date }],
     // Full kit per Appendix A + _meta per item (version/origin)
     kit: { type: mongoose.Schema.Types.Mixed, default: null },
+    // Regen context (NOT part of Appendix A; stripped from batch output)
+    context: { type: mongoose.Schema.Types.Mixed, default: null },
     practice: [{ cardId: String, confidence: Number, at: Date }],
     // raw inputs for dedupe/debug
     jd: String,

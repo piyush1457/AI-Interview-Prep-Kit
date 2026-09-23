@@ -5,6 +5,7 @@ import { requireAuth } from "../middleware/owner.js";
 import { Kit } from "../models/Kit.js";
 import { Job } from "../models/Job.js";
 import { runPipeline } from "../services/runPipeline.js";
+import { tagGenerated } from "./kits.js";
 
 const r = Router();
 r.use(requireAuth);
@@ -27,8 +28,8 @@ r.post("/batch", async (req: any, res) => {
     const kit = await Kit.create({ owner: req.userId, dedupeHash: hash, version: 1, status: "queued", ...p.data });
     const job = await Job.create({ kitId: kit._id, step: "queued", status: "queued" });
     kitIds.push(String(kit._id));
-    runPipeline({ ...p.data }).then(async ({ kit: out }) => {
-      await Kit.findByIdAndUpdate(kit._id, { $set: { kit: out, status: "done" }, $inc: { version: 1 } });
+    runPipeline({ ...p.data }).then(async ({ kit: out, context }) => {
+      await Kit.findByIdAndUpdate(kit._id, { $set: { kit: tagGenerated(out), context, status: "done" }, $inc: { version: 1 } });
       await Job.findByIdAndUpdate(job._id, { $set: { step: "done", status: "done" } });
     }).catch(async (e: any) => {
       await Kit.findByIdAndUpdate(kit._id, { $set: { status: "failed", error: { code: e?.code || "SCHEMA_INVALID", message: e?.message } } });

@@ -8,7 +8,8 @@ import pLimit from "p-limit";
 import { BatchCaseSchema, BatchOutputSchema, stripMeta, validateKit, ErrorCode } from "@ai-prep/kit-schema";
 import { runPipeline, PIPELINE_BUDGET_MS } from "./services/runPipeline.js";
 
-const BATCH_WALL_MS = 13 * 60 * 1000;
+export const BATCH_WALL_MS = 13 * 60 * 1000;
+export const CASE_CONCURRENCY = 3;
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -30,18 +31,21 @@ function parseArgs() {
   return { input, output };
 }
 
-const { input, output } = parseArgs();
-const resolvedInput = path.resolve(input);
-if (!fs.existsSync(resolvedInput)) {
-  console.error(`[evaluate] input not found: ${input} (cwd ${process.cwd()}, resolved ${resolvedInput})`);
-  process.exit(1);
+function loadCases() {
+  const { input, output } = parseArgs();
+  const resolvedInput = path.resolve(input);
+  if (!fs.existsSync(resolvedInput)) {
+    console.error(`[evaluate] input not found: ${input} (cwd ${process.cwd()}, resolved ${resolvedInput})`);
+    process.exit(1);
+  }
+  const rawCases: any[] = JSON.parse(fs.readFileSync(resolvedInput, "utf8"));
+  if (!Array.isArray(rawCases)) { console.error("[evaluate] input must be an array"); process.exit(1); }
+  return { rawCases, output };
 }
-const rawCases: any[] = JSON.parse(fs.readFileSync(resolvedInput, "utf8"));
-if (!Array.isArray(rawCases)) { console.error("[evaluate] input must be an array"); process.exit(1); }
 
-const limit = pLimit(3);
+const limit = pLimit(CASE_CONCURRENCY);
 
-async function runCase(c: any) {
+export async function runCase(c: any, pipeline = runPipeline) {
   const p = BatchCaseSchema.safeParse(c);
   if (!p.success) return { id: String(c?.id || "unknown"), status: "failed" as const, kit: null, error: { code: ErrorCode.VALIDATION, message: p.error.message.slice(0, 300) } };
   const { id, jd, company_url, days } = p.data;
@@ -51,7 +55,7 @@ async function runCase(c: any) {
       // v2 fix A: per-case accumulator excludes shared-queue contention from the deadline
       const acc: { ms: number } = { ms: 0 };
       const perCaseWithWait = (async () => {
-        const r = await runPipeline({ jd, company_url, days, bypassDedupe: true }, { queueWaitAccum: acc });
+        const r = await pipeline({ jd, company_url, days, bypassDedupe: true }, { queueWaitAccum: acc });
         queueWaitMs = acc.ms;
         return r;
       })();
@@ -77,32 +81,39 @@ async function runCase(c: any) {
   }
 }
 
-async function main() {
-  const batchPromise = Promise.all(rawCases.map((c) => limit(() => runCase(c))));
+/** Outer wall-clock race: resolves batch results, or BATCH_TIMEOUT entries on expiry. */
+export async function withWallClock<T>(batchPromise: Promise<T[]>, ids: string[], wallMs = BATCH_WALL_MS): Promise<T[]> {
   let wallTimer: any;
-  const wall = new Promise<any[]>((resolve) => {
+  const wall = new Promise<T[]>((resolve) => {
     wallTimer = setTimeout(() => {
-      const pending = rawCases.map((c: any) => ({ id: String(c?.id || "unknown"), status: "failed" as const, kit: null, error: { code: ErrorCode.BATCH_TIMEOUT, message: "outer 13min wall-clock exceeded" } }));
-      resolve(pending);
-    }, BATCH_WALL_MS);
+      resolve(ids.map((id) => ({ id, status: "failed", kit: null, error: { code: ErrorCode.BATCH_TIMEOUT, message: "outer wall-clock exceeded" } }) as unknown as T));
+    }, wallMs);
     wallTimer?.unref?.();
   });
-  // race: whichever settles first wins; but we need partial completed on timeout -> use flag
   let done = false;
-  const completed = await Promise.race([
-    batchPromise.then((kits) => { done = true; return kits; }),
-    wall.then((fallback) => (done ? fallback : fallback)),
-  ]);
-  // if batch finished first, use it; else fallback already marks all failed (partial merge omitted in stub-safe path)
-  const kits = done ? await batchPromise.catch(() => completed) : completed;
+  try {
+    return await Promise.race([
+      batchPromise.then((kits) => { done = true; return kits; }),
+      wall,
+    ]);
+  } finally {
+    clearTimeout(wallTimer);
+  }
+}
+
+async function main() {
+  const { rawCases, output } = loadCases();
+  const batchPromise = Promise.all(rawCases.map((c) => limit(() => runCase(c))));
+  const kits = await withWallClock(batchPromise, rawCases.map((c: any) => String(c?.id || "unknown")));
   const out: any = { version: "1.0", generated_at: new Date().toISOString(), kits };
   const v = BatchOutputSchema.safeParse(out);
   if (!v.success) { console.error("[evaluate] output schema invalid", v.error.message); process.exit(1); }
   fs.mkdirSync(path.dirname(path.resolve(output)), { recursive: true });
   fs.writeFileSync(output, JSON.stringify(v.data, null, 2));
   console.log(`[evaluate] wrote ${kits.length} entries to ${output}`);
-  clearTimeout(wallTimer);
   process.exit(0);
 }
 
-await main();
+// Top-level arg parsing has side effects (process.exit); only run main as CLI entry.
+const isEntry = process.argv[1] ? import.meta.url.endsWith(path.basename(process.argv[1])) : false;
+if (isEntry) await main();

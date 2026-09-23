@@ -1,0 +1,30 @@
+# Render blueprint for the Express backend.
+# Create via dashboard: New -> Blueprint -> connect repo, or New -> Web Service (Node).
+services:
+  - type: web
+    name: ai-prep-kit-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build --workspace=backend
+    startCommand: npm run start --workspace=backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GROQ_API_KEY
+        sync: false # paste in dashboard (secret)
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
+      - key: TAVILY_API_KEY
+        sync: false # optional
+      - key: MONGODB_URI
+        sync: false # Atlas connection string (secret)
+      - key: SESSION_SECRET
+        sync: false # 64-hex (secret)
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://YOUR-VERCEL-APP.vercel.app # set after Vercel deploy
+      - key: ALLOW_LOCALHOST
+        value: "false"
+      - key: GROQ_DELAY_MS
+        value: "500"

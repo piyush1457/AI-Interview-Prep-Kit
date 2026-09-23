@@ -30,7 +30,13 @@ function companyNameFromUrl(url: string): string {
   }
 }
 
-export async function runPipeline(input: PipelineInput, ev: PipelineEvents = {}): Promise<{ kit: Kit; warnings: string[] }> {
+export interface PipelineContext {
+  hiring: string;
+  discText: string;
+  crawlText: string;
+}
+
+export async function runPipeline(input: PipelineInput, ev: PipelineEvents = {}): Promise<{ kit: Kit; warnings: string[]; context: PipelineContext }> {
   const parsed = BatchCaseSchema.extend({ jd: BatchCaseSchema.shape.jd.min(1) }).safeParse({ id: "x", ...input });
   void parsed;
   const started = Date.now();
@@ -141,5 +147,5 @@ export async function runPipeline(input: PipelineInput, ev: PipelineEvents = {})
   const v = validateKit(kit);
   if (!v.success) throw Object.assign(new Error(`Kit schema invalid: ${v.error.message}`), { code: "SCHEMA_INVALID" });
   step("done", "done");
-  return { kit: v.data, warnings };
+  return { kit: v.data, warnings, context: { hiring, discText, crawlText } };
 }

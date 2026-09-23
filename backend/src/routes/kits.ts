@@ -6,6 +6,38 @@ import { Kit } from "../models/Kit.js";
 import { Job } from "../models/Job.js";
 import { runPipeline } from "../services/runPipeline.js";
 
+// Tag every generated item so later regens can preserve hand edits.
+export function tagGenerated(out: any): any {
+  const kit = JSON.parse(JSON.stringify(out));
+  for (const q of kit.questions || []) q._meta = { origin: "generated" };
+  for (const f of kit.flashcards || []) f._meta = { origin: "generated" };
+  kit.company_brief = { ...(kit.company_brief || {}), _meta: { origin: "generated" } };
+  return kit;
+}
+
+// Merge fresh regen output into existing kit, preserving pinned/edited items.
+export function mergeRegen(existing: any, fresh: any, scope: { type: "brief" } | { type: "category"; category: string } | { type: "schedule" }): any {
+  const kit = JSON.parse(JSON.stringify(existing));
+  const isPinned = (x: any) => x?._meta?.origin === "edited" || x?._meta?.origin === "pinned";
+  if (scope.type === "brief" && fresh.company_brief) {
+    kit.company_brief = { ...fresh.company_brief, _meta: { origin: "generated" } };
+  } else if (scope.type === "category") {
+    const cat = (scope as { type: "category"; category: string }).category;
+    // keep: pinned items (any category) + non-pinned items of OTHER categories.
+    // drop: non-pinned items of this category (they are replaced by fresh).
+    const kept = (kit.questions || []).filter((q: any) => isPinned(q) || q.category !== cat);
+    let n = 0;
+    for (const q of kit.questions || []) { const m = /^q(\d+)$/.exec(q.id || ""); if (m) n = Math.max(n, Number(m[1])); }
+    const freshQs = (fresh.questions || [])
+      .filter((q: any) => q.category === cat)
+      .map((q: any) => ({ ...q, id: `q${++n}`, _meta: { origin: "generated" } }));
+    kit.questions = kept.concat(freshQs);
+  } else if (scope.type === "schedule" && fresh.schedule) {
+    kit.schedule = fresh.schedule;
+  }
+  return kit;
+}
+
 const r = Router();
 r.use(requireAuth);
 
@@ -29,9 +61,10 @@ r.post("/", async (req: any, res) => {
     jd: p.data.jd, company_url: p.data.company_url, days: p.data.days,
   });
   const job = await Job.create({ kitId: kit._id, step: "queued", status: "queued" });
-  // fire-and-forget worker (Phase 1 in-process; Phase 2 could extract)
-  runPipeline({ ...p.data }).then(async ({ kit: out }) => {
-    await Kit.findByIdAndUpdate(kit._id, { $set: { kit: out, status: "done" }, $push: { steps: { step: "done", at: new Date() } }, $inc: { version: 1 } });
+  // fire-and-forget worker (in-process)
+  runPipeline({ ...p.data }).then(async ({ kit: out, context }) => {
+    const tagged: any = tagGenerated(out);
+    await Kit.findByIdAndUpdate(kit._id, { $set: { kit: tagged, context, status: "done" }, $push: { steps: { step: "done", at: new Date() } }, $inc: { version: 1 } });
     await Job.findByIdAndUpdate(job._id, { $set: { step: "done", status: "done" } });
   }).catch(async (e: any) => {
     await Kit.findByIdAndUpdate(kit._id, { $set: { status: "failed", error: { code: e?.code || "SCHEMA_INVALID", message: e?.message || "failed" } } });

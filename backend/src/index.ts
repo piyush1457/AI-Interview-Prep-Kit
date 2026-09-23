@@ -7,6 +7,9 @@ import { buildSession } from "./middleware/session.js";
 import authRoutes from "./routes/auth.js";
 import kitsRoutes from "./routes/kits.js";
 import kitsBatchRoutes from "./routes/kitsBatch.js";
+import regenRoutes from "./routes/regen.js";
+import practiceRoutes from "./routes/practice.js";
+import weakSpotsRoutes from "./routes/weakSpots.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -30,6 +33,9 @@ app.use(buildSession(MONGODB_URI, SESSION_SECRET));
 app.get("/api/health", (_req, res) => res.json({ ok: true, at: new Date().toISOString() }));
 app.use("/api/auth", authRoutes);
 app.use("/api/kits", kitsBatchRoutes);
+app.use("/api/kits", regenRoutes);
+app.use("/api/kits", practiceRoutes);
+app.use("/api/kits", weakSpotsRoutes);
 app.use("/api/kits", kitsRoutes);
 
 app.use((err: any, _req: any, res: any, _next: any) => {
