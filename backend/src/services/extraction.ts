@@ -14,14 +14,17 @@ export interface Extraction {
 
 export async function extractRequirements(jd: string, acc?: QueueWaitAccum): Promise<Extraction> {
   const trimmed = jd.trim();
+  if (!trimmed) {
+    throw Object.assign(new Error("job description is required"), { code: "VALIDATION", status: 400 });
+  }
   if (trimmed.length < 80) {
-    // deterministic thin path: no LLM invention
+    // deterministic thin path: no LLM invention - surface the JD text only
     return {
       title: trimmed.split("\n")[0]?.slice(0, 80) || "Role",
       seniority: "",
       responsibilities: [],
       requirements: [
-        { id: "r1", text: trimmed.slice(0, 200) || "General role requirements", kind: "technical", priority: "must" },
+        { id: "r1", text: trimmed.slice(0, 200), kind: "technical", priority: "must" },
       ],
       thin: true,
     };

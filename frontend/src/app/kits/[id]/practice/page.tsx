@@ -11,6 +11,8 @@ import WeakSpots from "@/components/practice/WeakSpots";
 function PracticeContent({ id }: { id: string }) {
   const [doc, setDoc] = useState<KitEnvelope | null>(null);
   const [err, setErr] = useState("");
+  const [spotsRev, setSpotsRev] = useState(0);
+  const [focusCardId, setFocusCardId] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
     api
@@ -66,8 +68,17 @@ function PracticeContent({ id }: { id: string }) {
       </header>
 
       <div className="mt-8 flex flex-col gap-6">
-        <FlashcardRunner kitId={id} cards={cards} />
-        <WeakSpots kitId={id} />
+        <FlashcardRunner
+          kitId={id}
+          cards={cards}
+          onRated={() => setSpotsRev((r) => r + 1)}
+          focusCardId={focusCardId}
+        />
+        <WeakSpots
+          kitId={id}
+          refreshKey={spotsRev}
+          onOpenCard={(cardId) => setFocusCardId(cardId)}
+        />
       </div>
     </>
   );

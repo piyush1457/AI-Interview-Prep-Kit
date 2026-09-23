@@ -53,3 +53,13 @@ export function nextQuestionId(questions: Array<Pick<Question, "id">>): string {
   }
   return `q${n + 1}`;
 }
+
+/** Next fresh flashcard id after existing fN ids. */
+export function nextFlashcardId(cards: Array<{ id: string }>): string {
+  let n = 0;
+  for (const c of cards) {
+    const m = /^f(\d+)$/.exec(c?.id || "");
+    if (m) n = Math.max(n, Number(m[1]));
+  }
+  return `f${n + 1}`;
+}

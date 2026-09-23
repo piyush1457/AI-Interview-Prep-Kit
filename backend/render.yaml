@@ -5,7 +5,7 @@ services:
     name: ai-prep-kit-backend
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build --workspace=backend
+    buildCommand: npm install && npm run build --workspace=packages/kit-schema && npm run build --workspace=backend
     startCommand: npm run start --workspace=backend
     healthCheckPath: /api/health
     envVars:

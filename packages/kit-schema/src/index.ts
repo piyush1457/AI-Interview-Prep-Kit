@@ -4,7 +4,7 @@ import { ErrorCode } from "./errors.js";
 export { ErrorCode } from "./errors.js";
 export type { ErrorCode as ErrorCodeType } from "./errors.js";
 
-// Appendix A enums — exact strings required by automated checker
+// Appendix A enums - exact strings required by automated checker
 export const RequirementKind = z.enum(["technical", "behavioural", "domain"]);
 export const RequirementPriority = z.enum(["must", "nice"]);
 export const QuestionCategory = z.enum(["technical", "behavioural", "system-design", "company-fit"]);

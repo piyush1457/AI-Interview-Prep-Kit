@@ -41,4 +41,19 @@ describe("mergeRegen (pinned survives regen)", () => {
     expect(merged.company_brief.summary).toBe("new");
     expect(merged.questions).toHaveLength(3);
   });
+
+  it("hand-edited brief survives brief regen", () => {
+    const withEditedBrief = {
+      ...existing,
+      company_brief: { summary: "mine", what_they_do: "keep", sources: [], _meta: { origin: "edited" } },
+    };
+    const merged = mergeRegen(
+      withEditedBrief,
+      { company_brief: { summary: "fresh", what_they_do: "replace", sources: [] } },
+      { type: "brief" }
+    );
+    expect(merged.company_brief.summary).toBe("mine");
+    expect(merged.company_brief._meta.origin).toBe("edited");
+    expect(merged.questions).toHaveLength(3);
+  });
 });

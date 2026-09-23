@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* Apollo palette — warm limestone editorial, flat (no shadows, no gradients) */
+  /* Apollo palette - warm limestone editorial, flat (no shadows, no gradients) */
   --color-limestone: #ccc9c6;
   --color-marble: #f7f5f2;
   --color-paper: #ffffff;
@@ -9,7 +9,8 @@
   --color-charcoal: #1a1a1a;
   --color-graphite: #47423d;
   --color-pebble: #736f6c;
-  --color-ash: #94918e;
+  /* Darkened from #94918e to pass WCAG AA (4.5:1) on limestone + marble */
+  --color-ash: #55524e;
   --color-flint: #e5e7eb;
   --color-highlighter: #f8ff2c;
   --color-volt: #ebf212;

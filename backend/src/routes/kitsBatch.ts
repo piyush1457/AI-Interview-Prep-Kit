@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { dedupeHash } from "@ai-prep/kit-schema";
 import { requireAuth } from "../middleware/owner.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
 import { Kit } from "../models/Kit.js";
 import { Job } from "../models/Job.js";
 import { runPipeline } from "../services/runPipeline.js";
@@ -10,10 +11,10 @@ import { tagGenerated } from "./kits.js";
 const r = Router();
 r.use(requireAuth);
 
-const item = z.object({ jd: z.string().min(1), company_url: z.string().min(1), days: z.number().int().min(1).max(60) });
+const item = z.object({ jd: z.string().trim().min(1), company_url: z.string().trim().min(1), days: z.number().int().min(1).max(60) });
 
-// POST /api/kits/batch — in-app multi-role upload (JSON array or {items}); 1MB/20-row caps enforced by express.json + length check
-r.post("/batch", async (req: any, res) => {
+// POST /api/kits/batch - in-app multi-role upload (JSON array or {items}); 1MB/20-row caps enforced by express.json + length check
+r.post("/batch", asyncHandler(async (req: any, res) => {
   const raw = Array.isArray(req.body) ? req.body : req.body?.items;
   if (!Array.isArray(raw) || raw.length === 0) return res.status(400).json({ code: "VALIDATION", message: "items[] required" });
   if (raw.length > 20) return res.status(400).json({ code: "VALIDATION", message: "max 20 rows per batch" });
@@ -28,8 +29,29 @@ r.post("/batch", async (req: any, res) => {
     const kit = await Kit.create({ owner: req.userId, dedupeHash: hash, version: 1, status: "queued", ...p.data });
     const job = await Job.create({ kitId: kit._id, step: "queued", status: "queued" });
     kitIds.push(String(kit._id));
-    runPipeline({ ...p.data }).then(async ({ kit: out, context }) => {
-      await Kit.findByIdAndUpdate(kit._id, { $set: { kit: tagGenerated(out), context, status: "done" }, $inc: { version: 1 } });
+    runPipeline(
+      { ...p.data },
+      {
+        onStep: async (step: string, st: string) => {
+          try {
+            if (st !== "done") {
+              await Kit.findByIdAndUpdate(kit._id, {
+                $set: { status: "running" },
+                $push: { steps: { step, at: new Date() } },
+              });
+              await Job.findByIdAndUpdate(job._id, { $set: { step, status: "running" } });
+            }
+          } catch {
+            /* best-effort progress */
+          }
+        },
+      }
+    ).then(async ({ kit: out, context, warnings }) => {
+      await Kit.findByIdAndUpdate(kit._id, {
+        $set: { kit: tagGenerated(out), context, warnings: warnings || [], status: "done" },
+        $push: { steps: { step: "done", at: new Date() } },
+        $inc: { version: 1 },
+      });
       await Job.findByIdAndUpdate(job._id, { $set: { step: "done", status: "done" } });
     }).catch(async (e: any) => {
       await Kit.findByIdAndUpdate(kit._id, { $set: { status: "failed", error: { code: e?.code || "SCHEMA_INVALID", message: e?.message } } });
@@ -37,6 +59,6 @@ r.post("/batch", async (req: any, res) => {
     });
   }
   res.status(202).json({ kitIds, rowErrors });
-});
+}));
 
 export default r;

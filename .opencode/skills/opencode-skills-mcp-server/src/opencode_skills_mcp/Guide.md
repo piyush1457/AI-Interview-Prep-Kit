@@ -28,4 +28,4 @@ This document summarizes the issues encountered while setting up the OpenCode MC
 - **Enabled Server**: Verified config validity and toggled enable in OpenCode.
 
 ## Final Result
-The MCP server now loads and enables successfully in OpenCode. All 8 skills (e.g., `list_skills`, `install_skill`) are accessible via AI interactions. The setup is compatible with the current MCP version. Users can fork the repository and submit a pull request with these fixes for upstream integration. No manual server starts are required—OpenCode manages it automatically.
+The MCP server now loads and enables successfully in OpenCode. All 8 skills (e.g., `list_skills`, `install_skill`) are accessible via AI interactions. The setup is compatible with the current MCP version. Users can fork the repository and submit a pull request with these fixes for upstream integration. No manual server starts are required-OpenCode manages it automatically.

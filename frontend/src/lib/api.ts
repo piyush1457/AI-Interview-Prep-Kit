@@ -40,7 +40,15 @@ async function req<T>(path: string, init?: VersionedInit): Promise<T> {
     "Content-Type": "application/json",
     ...(headers ?? {}),
   };
-  if (version != null) finalHeaders["If-Match"] = String(version);
+  if (version != null) {
+    if (!Number.isInteger(version) || version < 1) {
+      throw new ApiError("Missing kit version for optimistic concurrency", {
+        status: 428,
+        code: "VALIDATION",
+      });
+    }
+    finalHeaders["If-Match"] = String(version);
+  }
 
   const res = await fetch(path, { ...rest, headers: finalHeaders, credentials: "include" });
 
@@ -48,7 +56,7 @@ async function req<T>(path: string, init?: VersionedInit): Promise<T> {
     const body = (await res.json().catch(() => ({}))) as Partial<KitEnvelope> & {
       message?: string;
     };
-    throw new ApiError(body.message || "Stale version — refetch and re-apply", {
+    throw new ApiError(body.message || "Stale version - refetch and re-apply", {
       status: 409,
       code: 409,
       kit: body as KitEnvelope,
@@ -100,7 +108,8 @@ export const api = {
       body: JSON.stringify({ cardId, confidence }),
     }),
   practiceProgress: (id: string) => req<PracticeRecord>(`/api/kits/${id}/practice`),
-  weakSpots: (id: string) => req<WeakSpotsReport>(`/api/kits/${id}/weak-spots`),
+  weakSpots: (id: string) =>
+    req<WeakSpotsReport>(`/api/kits/${id}/weak-spots`, { cache: "no-store" }),
 };
 
 export type { BriefSave };

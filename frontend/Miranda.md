@@ -1,70 +1,70 @@
-# Miranda — Style Reference
-> Old-world broadsheet on warm cream — newspaper editorial for the digital age.
+# Miranda - Style Reference
+> Old-world broadsheet on warm cream - newspaper editorial for the digital age.
 
 **Theme:** light
 
 Source measurements are normalized; roles and recommendations are interpreted. Font summary lists are independent, not paired by position. HTML examples are reconstructions, not source components.
 
-A vintage broadsheet portfolio rendered on warm parchment stock. Near-black ink dominates text, borders, and large editorial banners; the cream canvas stays quiet and matte, never clinical. Display type is the brand: enormous custom serifs (Canopee, Germgoth) with negative tracking and sub-1.0 line-heights so letters collide and bleed into one another, mimicking woodblock print and 19th-century poster lettering. One warm ember-orange accent appears sparingly — a stamp, a star icon — like a hand-stamped seal. Components stay flat and borderless; depth comes from contrast, not shadow. Layout reads like a zine or newspaper spread: oversized headline banners intercut with tight three-column project grids and full-bleed illustrations.
+A vintage broadsheet portfolio rendered on warm parchment stock. Near-black ink dominates text, borders, and large editorial banners; the cream canvas stays quiet and matte, never clinical. Display type is the brand: enormous custom serifs (Canopee, Germgoth) with negative tracking and sub-1.0 line-heights so letters collide and bleed into one another, mimicking woodblock print and 19th-century poster lettering. One warm ember-orange accent appears sparingly - a stamp, a star icon - like a hand-stamped seal. Components stay flat and borderless; depth comes from contrast, not shadow. Layout reads like a zine or newspaper spread: oversized headline banners intercut with tight three-column project grids and full-bleed illustrations.
 
-## Tokens — Colors
+## Tokens - Colors
 
 | Name | Value | Token | Role |
 |------|-------|-------|------|
-| Parchment | `#e2dedb` | `--color-parchment` | Page background, image matte areas — the warm stock everything else is printed on |
+| Parchment | `#e2dedb` | `--color-parchment` | Page background, image matte areas - the warm stock everything else is printed on |
 | Bone Cream | `#cdc6be` | `--color-bone-cream` | Card surfaces, secondary panels, subtle inset backgrounds slightly darker than parchment |
-| Ink Black | `#1d1d1b` | `--color-ink-black` | Body text, nav links, borders, large display banner fills, icon strokes — the near-black that carries every contrast-critical role |
+| Ink Black | `#1d1d1b` | `--color-ink-black` | Body text, nav links, borders, large display banner fills, icon strokes - the near-black that carries every contrast-critical role |
 | Charcoal | `#69645f` | `--color-charcoal` | Muted secondary text, subdued borders, quiet typographic accents |
 | Pure Black | `#000000` | `--color-pure-black` | Card outline emphasis, deepest fills, highest-contrast border work on cream surfaces |
-| Ember Orange | `#c03f13` | `--color-ember-orange` | Stamp illustrations, star icon accent, occasional seal/sticker color — the single chromatic punctuation in an otherwise monochrome system |
+| Ember Orange | `#c03f13` | `--color-ember-orange` | Stamp illustrations, star icon accent, occasional seal/sticker color - the single chromatic punctuation in an otherwise monochrome system |
 
-## Tokens — Typography
+## Tokens - Typography
 
-### Editorial New — Body text, nav, links, card descriptions, smaller headings — the workhorse serif · `--font-editorial-new`
+### Editorial New - Body text, nav, links, card descriptions, smaller headings - the workhorse serif · `--font-editorial-new`
 - **Substitute:** Tiempos Text or Source Serif 4
 - **Weights:** 300
 - **Sizes:** 16px, 17px, 19px, 20px, 24px, 29px, 31px, 32px, 37px, 86px
 - **Line height:** 0.93, 1.08, 1.11, 1.15, 1.16, 1.18, 1.20, 1.25, 1.27, 1.33, 1.36
 - **Letter spacing:** -0.0400em to -0.0100em; tighter at larger sizes
-- **Role:** Body text, nav, links, card descriptions, smaller headings — the workhorse serif
+- **Role:** Body text, nav, links, card descriptions, smaller headings - the workhorse serif
 
-### Canopee — Display headlines and section titles — the signature font for oversize banners (MIRANDA, WEBSITE, INTERACTIVE ARTIST!) · `--font-canopee`
+### Canopee - Display headlines and section titles - the signature font for oversize banners (MIRANDA, WEBSITE, INTERACTIVE ARTIST!) · `--font-canopee`
 - **Substitute:** Migra or Bodoni Moda at heavy weight
 - **Weights:** 400
 - **Sizes:** 17px, 20px, 22px, 23px, 32px, 43px, 65px, 72px, 86px, 109px, 112px, 118px, 122px, 202px, 212px, 366px, 432px, 446px, 533px
 - **Line height:** 0.71, 0.73, 0.77, 0.78, 0.79, 0.81, 0.91, 1.00, 1.25
 - **Letter spacing:** -0.0890em to -0.0070em; extreme tightening at display sizes
-- **Role:** Display headlines and section titles — the signature font for oversize banners (MIRANDA, WEBSITE, INTERACTIVE ARTIST!)
+- **Role:** Display headlines and section titles - the signature font for oversize banners (MIRANDA, WEBSITE, INTERACTIVE ARTIST!)
 
-### Domaine Display — Mid-weight display headings, body emphasis, secondary hero text — bridges Editorial New's restraint and Canopee's drama · `--font-domaine-display`
+### Domaine Display - Mid-weight display headings, body emphasis, secondary hero text - bridges Editorial New's restraint and Canopee's drama · `--font-domaine-display`
 - **Substitute:** Playfair Display or GT Super
 - **Weights:** 500
 - **Sizes:** 20px, 22px, 32px, 65px, 72px, 86px, 109px, 118px, 122px, 446px
 - **Line height:** 0.73, 0.78, 0.79, 0.91, 1.00
 - **Letter spacing:** -0.0600em to -0.0200em
-- **Role:** Mid-weight display headings, body emphasis, secondary hero text — bridges Editorial New's restraint and Canopee's drama
+- **Role:** Mid-weight display headings, body emphasis, secondary hero text - bridges Editorial New's restraint and Canopee's drama
 
-### Germgoth — Rare gothic/blackletter accent — used for occasional impact moments that need medieval or poster-poster weight · `--font-germgoth`
+### Germgoth - Rare gothic/blackletter accent - used for occasional impact moments that need medieval or poster-poster weight · `--font-germgoth`
 - **Substitute:** Pirata One or IM Fell English
 - **Weights:** 400
 - **Sizes:** 158px
 - **Line height:** normal
 - **Letter spacing:** -0.0040em
-- **Role:** Rare gothic/blackletter accent — used for occasional impact moments that need medieval or poster-poster weight
+- **Role:** Rare gothic/blackletter accent - used for occasional impact moments that need medieval or poster-poster weight
 
 ### Type Scale
 
 | Role | Family | Weight | Size | Line Height | Letter Spacing | Token |
 |------|--------|--------|------|-------------|----------------|-------|
-| caption | — | — | 14px | 1.18 | -0.27px | `--text-caption` |
-| body-sm | — | — | 16px | 1.27 | -0.16px | `--text-body-sm` |
-| subheading | — | — | 22px | 1.18 | -0.55px | `--text-subheading` |
-| heading-sm | — | — | 32px | 1.11 | -0.96px | `--text-heading-sm` |
-| heading | — | — | 65px | 0.91 | -2.08px | `--text-heading` |
-| heading-lg | — | — | 122px | 0.79 | -4.88px | `--text-heading-lg` |
-| display | — | — | 446px | 0.73 | -22.3px | `--text-display` |
+| caption | - | - | 14px | 1.18 | -0.27px | `--text-caption` |
+| body-sm | - | - | 16px | 1.27 | -0.16px | `--text-body-sm` |
+| subheading | - | - | 22px | 1.18 | -0.55px | `--text-subheading` |
+| heading-sm | - | - | 32px | 1.11 | -0.96px | `--text-heading-sm` |
+| heading | - | - | 65px | 0.91 | -2.08px | `--text-heading` |
+| heading-lg | - | - | 122px | 0.79 | -4.88px | `--text-heading-lg` |
+| display | - | - | 446px | 0.73 | -22.3px | `--text-display` |
 
-## Tokens — Spacing & Shapes
+## Tokens - Spacing & Shapes
 
 **Base unit:** 4px
 
@@ -157,7 +157,7 @@ Left card: image. Center card: massive Canopee heading ('ALL WORK!') in 65-86px 
 ### Text Link with Underline
 **Role:** Inline navigation/CTA
 
-Editorial New 16-19px weight 300, Ink Black (#1d1d1b) color, 1px underline offset 3px. Hover darkens to Pure Black. No background fill, no button shape — editorial hyperlinks stay as text.
+Editorial New 16-19px weight 300, Ink Black (#1d1d1b) color, 1px underline offset 3px. Hover darkens to Pure Black. No background fill, no button shape - editorial hyperlinks stay as text.
 
 ### Project Metadata Row
 **Role:** Work card footer detail
@@ -167,22 +167,22 @@ Single-line row of Editorial New 14-16px caption text in Charcoal (#69645f) belo
 ## Do's and Don'ts
 
 ### Do
-- Use Canopee at 200px+ for any section-divider banner — display sizes below 122px lose the system's defining character
+- Use Canopee at 200px+ for any section-divider banner - display sizes below 122px lose the system's defining character
 - Set line-height below 0.85 on all Canopee display text so letters crowd and nearly collide; this is the signature, not a bug
-- Pair every project card with a 2.88px-radius square NEW badge in Ember Orange (#c03f13) — the badge is the only chromatic note in a monochrome page
-- Use Editorial New weight 300 exclusively for body, nav, and small headings — heavier weights break the editorial restraint
+- Pair every project card with a 2.88px-radius square NEW badge in Ember Orange (#c03f13) - the badge is the only chromatic note in a monochrome page
+- Use Editorial New weight 300 exclusively for body, nav, and small headings - heavier weights break the editorial restraint
 - Let images bleed to the card edge with 0px radius; sharp corners are part of the broadsheet language
-- Keep the page background Parchment (#e2dedb) and card surfaces Bone Cream (#cdc6be) — never introduce a white or cool gray
+- Keep the page background Parchment (#e2dedb) and card surfaces Bone Cream (#cdc6be) - never introduce a white or cool gray
 - Use negative letter-spacing on all Canopee and Domaine Display headings; positive tracking destroys the printed-poster feel
 
 ### Don't
-- Do not introduce gradients, glassmorphism, or modern blur effects — this is a 1890s broadsheet, not 2024 SaaS
-- Do not use border-radius above 12px on any element — sharp geometry defines the print aesthetic
-- Do not add more than one chromatic accent — the Ember Orange only works because the rest is monochrome
+- Do not introduce gradients, glassmorphism, or modern blur effects - this is a 1890s broadsheet, not 2024 SaaS
+- Do not use border-radius above 12px on any element - sharp geometry defines the print aesthetic
+- Do not add more than one chromatic accent - the Ember Orange only works because the rest is monochrome
 - Do not center-align body text longer than two lines; flush-left only for paragraphs
 - Do not use shadows for general depth; reserve the directional ink-color shadow for project cards only
-- Do not substitute system sans-serifs (Inter, Helvetica) for any of the four custom faces — the serif/gothic mix is load-bearing
-- Do not use line-height above 1.0 on display headings — open spacing kills the compressed woodblock feel
+- Do not substitute system sans-serifs (Inter, Helvetica) for any of the four custom faces - the serif/gothic mix is load-bearing
+- Do not use line-height above 1.0 on display headings - open spacing kills the compressed woodblock feel
 
 ## Surfaces
 
@@ -200,11 +200,11 @@ Single-line row of Editorial New 14-16px caption text in Charcoal (#69645f) belo
 
 ## Imagery
 
-Digital illustration dominates over photography. Portrait subjects are stylized semi-realistic digital paintings with dramatic lighting (rim-lit faces, saturated backgrounds, painterly texture). Project thumbnails lean toward moody interior photography (warm wood, cool blue retail spaces). Illustrations are tightly cropped, often filling the full card width, with no border or padding buffer. One Ember Orange graphic accent (stamp sunburst) appears as a decorative seal. The overall treatment feels like a curated magazine spread — every image is art-directed, never stock.
+Digital illustration dominates over photography. Portrait subjects are stylized semi-realistic digital paintings with dramatic lighting (rim-lit faces, saturated backgrounds, painterly texture). Project thumbnails lean toward moody interior photography (warm wood, cool blue retail spaces). Illustrations are tightly cropped, often filling the full card width, with no border or padding buffer. One Ember Orange graphic accent (stamp sunburst) appears as a decorative seal. The overall treatment feels like a curated magazine spread - every image is art-directed, never stock.
 
 ## Layout
 
-Full-bleed page with max-width ~1440px centered. The top opens with a thin header bar, then a three-column 'featured work' strip (image, type, image). A full-width Ink Black display banner (MIRANDA) crashes through the middle, acting as a typographic section break. Below: alternating two-column and three-column blocks of project cards and portrait illustrations, each separated by generous 43px vertical rhythm. Another full-width banner (WEBSITE) punctuates the lower half. The footer is a simple two-column text block. Navigation is minimal — a single hamburger icon top-right, no persistent nav bar. The grid is consistent: always 3 equal columns at the top tier, breaking into 2 or 1 for illustrative sections. Vertical spacing is comfortable but not airy; the density feels curated, not sparse.
+Full-bleed page with max-width ~1440px centered. The top opens with a thin header bar, then a three-column 'featured work' strip (image, type, image). A full-width Ink Black display banner (MIRANDA) crashes through the middle, acting as a typographic section break. Below: alternating two-column and three-column blocks of project cards and portrait illustrations, each separated by generous 43px vertical rhythm. Another full-width banner (WEBSITE) punctuates the lower half. The footer is a simple two-column text block. Navigation is minimal - a single hamburger icon top-right, no persistent nav bar. The grid is consistent: always 3 equal columns at the top tier, breaking into 2 or 1 for illustrative sections. Vertical spacing is comfortable but not airy; the density feels curated, not sparse.
 
 ## Agent Prompt Guide
 
@@ -230,11 +230,11 @@ Full-bleed page with max-width ~1440px centered. The top opens with a thin heade
 
 ## Similar Brands
 
-- **Locomotive (locomotive.ca)** — Same broadsheet editorial typography with extreme display sizes and tight letter-spacing on a cream/warm background
-- **Pentagram portfolio pages** — Newspaper-grid layouts, oversize serif headlines bleeding off cards, monochrome with single chromatic stamp accent
-- **Rauno Freiberg (raunofreiberg.com)** — Custom display faces, sharp-cornered image cards, generous whitespace on warm neutral canvas
-- **Resn (resn.co.nz)** — Playful experimental portfolio that uses oversize custom type as architectural elements rather than body copy
-- **Frank Chimero** — Editorial portfolio tradition — broadsheet-inspired, serif-driven, monochrome with intentional restraint
+- **Locomotive (locomotive.ca)** - Same broadsheet editorial typography with extreme display sizes and tight letter-spacing on a cream/warm background
+- **Pentagram portfolio pages** - Newspaper-grid layouts, oversize serif headlines bleeding off cards, monochrome with single chromatic stamp accent
+- **Rauno Freiberg (raunofreiberg.com)** - Custom display faces, sharp-cornered image cards, generous whitespace on warm neutral canvas
+- **Resn (resn.co.nz)** - Playful experimental portfolio that uses oversize custom type as architectural elements rather than body copy
+- **Frank Chimero** - Editorial portfolio tradition - broadsheet-inspired, serif-driven, monochrome with intentional restraint
 
 ## Quick Start
 
@@ -250,13 +250,13 @@ Full-bleed page with max-width ~1440px centered. The top opens with a thin heade
   --color-pure-black: #000000;
   --color-ember-orange: #c03f13;
 
-  /* Typography — Font Families */
+  /* Typography - Font Families */
   --font-editorial-new: 'Editorial New', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-canopee: 'Canopee', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-domaine-display: 'Domaine Display', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-germgoth: 'Germgoth', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-  /* Typography — Scale */
+  /* Typography - Scale */
   --text-caption: 14px;
   --leading-caption: 1.18;
   --tracking-caption: -0.27px;
@@ -279,7 +279,7 @@ Full-bleed page with max-width ~1440px centered. The top opens with a thin heade
   --leading-display: 0.73;
   --tracking-display: -22.3px;
 
-  /* Typography — Weights */
+  /* Typography - Weights */
   --font-weight-light: 300;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -348,7 +348,7 @@ Full-bleed page with max-width ~1440px centered. The top opens with a thin heade
   --font-domaine-display: 'Domaine Display', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-germgoth: 'Germgoth', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-  /* Typography — Scale */
+  /* Typography - Scale */
   --text-caption: 14px;
   --leading-caption: 1.18;
   --tracking-caption: -0.27px;

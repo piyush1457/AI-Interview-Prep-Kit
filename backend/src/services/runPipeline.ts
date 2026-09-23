@@ -37,8 +37,15 @@ export interface PipelineContext {
 }
 
 export async function runPipeline(input: PipelineInput, ev: PipelineEvents = {}): Promise<{ kit: Kit; warnings: string[]; context: PipelineContext }> {
-  const parsed = BatchCaseSchema.extend({ jd: BatchCaseSchema.shape.jd.min(1) }).safeParse({ id: "x", ...input });
-  void parsed;
+  const parsed = BatchCaseSchema.extend({
+    jd: BatchCaseSchema.shape.jd.trim().min(1, "job description is required"),
+  }).safeParse({ id: "x", ...input });
+  if (!parsed.success) {
+    throw Object.assign(new Error(parsed.error.issues[0]?.message || "invalid pipeline input"), {
+      code: "VALIDATION",
+      status: 400,
+    });
+  }
   const started = Date.now();
   // v2 fix A: accumulate shared-queue contention here; deadline excludes it.
   const acc: { ms: number } = ev.queueWaitAccum ?? { ms: 0 };

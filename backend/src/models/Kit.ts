@@ -11,6 +11,8 @@ const kitSchema = new mongoose.Schema(
     kit: { type: mongoose.Schema.Types.Mixed, default: null },
     // Regen context (NOT part of Appendix A; stripped from batch output)
     context: { type: mongoose.Schema.Types.Mixed, default: null },
+    // Research/generation warnings (NO_HIRING_PAGE, crawl errors, etc.) - shown in UI
+    warnings: { type: [String], default: [] },
     practice: [{ cardId: String, confidence: Number, at: Date }],
     // raw inputs for dedupe/debug
     jd: String,

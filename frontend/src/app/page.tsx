@@ -4,12 +4,12 @@ const FEATURES = [
   {
     n: "01",
     title: "Research",
-    body: "We crawl the company site, pull hiring pages and public discussion, then distil an honest company brief — no fabrication when sources are thin.",
+    body: "We crawl the company site, pull hiring pages and public discussion, then distil an honest company brief - no fabrication when sources are thin.",
   },
   {
     n: "02",
     title: "Generate",
-    body: "Requirements extracted from your JD become four categorised question banks — technical, behavioural, system design, company fit — with answer outlines.",
+    body: "Requirements extracted from your JD become four categorised question banks - technical, behavioural, system design, company fit - with answer outlines.",
   },
   {
     n: "03",
@@ -47,7 +47,7 @@ export default function Home() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/register" className="btn btn-primary">
-              Get started — it&apos;s free
+              Get started - it&apos;s free
             </Link>
             <Link href="/login" className="btn btn-outline">
               I have an account
@@ -71,7 +71,7 @@ export default function Home() {
       <footer className="border-t border-flint bg-marble">
         <div className="mx-auto w-full max-w-[1200px] px-6 py-5">
           <p className="font-mono text-[11px] uppercase tracking-wider text-ash">
-            Built with Groq · Next.js · Express · MongoDB — FS-AI-INTERVIEW-01
+            Built with Groq · Next.js · Express · MongoDB - FS-AI-INTERVIEW-01
           </p>
         </div>
       </footer>

@@ -8,13 +8,13 @@ import Field from "@/components/atoms/Field";
 
 function errorText(e: unknown): string {
   if (e instanceof ApiError) {
-    if (e.status === 409) return "That email is already registered — try signing in.";
+    if (e.status === 409) return "That email is already registered - try signing in.";
     if (e.code === "VALIDATION") return e.message || "Check your details and try again.";
-    if (e.status === 429) return "Too many attempts — try again in a few minutes.";
+    if (e.status === 429) return "Too many attempts - try again in a few minutes.";
     return e.message;
   }
   if (e instanceof Error) return e.message;
-  return "Something went wrong — try again.";
+  return "Something went wrong - try again.";
 }
 
 function RegisterForm() {

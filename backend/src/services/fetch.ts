@@ -2,15 +2,30 @@ import dns from "dns/promises";
 import net from "net";
 
 // SSRF guard: block private/loopback/link-local + cloud metadata.
-// ALLOW_LOCALHOST=true bypasses only for `npm run evaluate` localhost fixtures.
+// ALLOW_LOCALHOST=true bypasses only loopback (127.0.0.0/8, ::1) for
+// `npm run evaluate` localhost fixtures - never private/metadata ranges.
 export function allowLocalhost() {
   return process.env.ALLOW_LOCALHOST === "true";
 }
 
+function normalizeIp(ip: string): string {
+  // IPv4-mapped IPv6 (::ffff:127.0.0.1) -> plain IPv4 so checks apply
+  const m = /^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i.exec(ip.trim());
+  if (m) return m[1];
+  return ip.trim().toLowerCase();
+}
+
+function isLoopbackIp(ip: string): boolean {
+  const n = normalizeIp(ip);
+  if (net.isIPv4(n)) return n.split(".")[0] === "127";
+  return n === "::1";
+}
+
 export function isBlockedIp(ip: string): boolean {
   if (!net.isIP(ip)) return true;
-  if (net.isIPv4(ip)) {
-    const p = ip.split(".").map(Number);
+  const n = normalizeIp(ip);
+  if (net.isIPv4(n)) {
+    const p = n.split(".").map(Number);
     if (p[0] === 10) return true;
     if (p[0] === 172 && p[1] >= 16 && p[1] <= 31) return true;
     if (p[0] === 192 && p[1] === 168) return true;
@@ -20,9 +35,8 @@ export function isBlockedIp(ip: string): boolean {
     return false;
   }
   // IPv6: loopback, unspecified, link-local, unique-local
-  const low = ip.toLowerCase();
-  if (low === "::1" || low === "::") return true;
-  if (low.startsWith("fe80:") || low.startsWith("fc") || low.startsWith("fd")) return true;
+  if (n === "::1" || n === "::") return true;
+  if (n.startsWith("fe80:") || n.startsWith("fc") || n.startsWith("fd")) return true;
   return false;
 }
 
@@ -40,8 +54,12 @@ export async function resolveAndCheck(hostname: string): Promise<string[]> {
     throw Object.assign(new Error(`DNS lookup failed for ${hostname}`), { code: "COMPANY_UNREACHABLE" });
   }
   const blocked = records.filter(isBlockedIp);
-  if (blocked.length > 0 && !allowLocalhost()) {
-    throw Object.assign(new Error(`Blocked IP for ${hostname}: ${blocked[0]}`), { code: "COMPANY_UNREACHABLE" });
+  if (blocked.length > 0) {
+    // ALLOW_LOCALHOST only exempts loopback - private/metadata stay blocked.
+    const bypassed = allowLocalhost() && blocked.every(isLoopbackIp);
+    if (!bypassed) {
+      throw Object.assign(new Error(`Blocked IP for ${hostname}: ${blocked[0]}`), { code: "COMPANY_UNREACHABLE" });
+    }
   }
   return records;
 }

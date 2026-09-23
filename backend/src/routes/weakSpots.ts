@@ -1,17 +1,22 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/owner.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
 import { Kit } from "../models/Kit.js";
 
 const r = Router();
 r.use(requireAuth);
 
-// GET /api/kits/:id/weak-spots — creative feature: low-confidence cards + uncovered musts.
-r.get("/:id/weak-spots", async (req: any, res) => {
+// GET /api/kits/:id/weak-spots - creative feature: low-confidence cards + uncovered musts.
+r.get("/:id/weak-spots", asyncHandler(async (req: any, res) => {
   const k: any = await Kit.findOne({ _id: req.params.id, owner: req.userId });
   if (!k) return res.status(404).json({ code: "VALIDATION", message: "not found" });
   const conf = new Map<string, number>((k.practice || []).map((x: any) => [x.cardId, x.confidence]));
   const cards = k.kit?.flashcards || [];
-  const low = cards.filter((c: any) => (conf.get(c.id) ?? 0) <= 1);
+  // Only cards the user actually rated shaky (1). Unrated cards are not weak spots yet.
+  const low = cards.filter((c: any) => {
+    const v = conf.get(c.id);
+    return v !== undefined && v <= 1;
+  });
   const uncoveredMusts: string[] = k.kit?.coverage?.uncovered_requirement_ids || [];
   const reqText = new Map((k.kit?.role?.requirements || []).map((x: any) => [x.id, x.text]));
   const focusDays = (k.kit?.schedule?.days || [])
@@ -25,9 +30,9 @@ r.get("/:id/weak-spots", async (req: any, res) => {
     uncoveredMusts: uncoveredMusts.map((id: string) => ({ id, text: reqText.get(id) || id })),
     suggestedDays: focusDays,
     summary: low.length === 0 && uncoveredMusts.length === 0
-      ? "No weak spots — all must-haves covered and confidence is solid."
-      : `${low.length} shaky card(s), ${uncoveredMusts.length} uncovered must-have(s). Revisit days ${focusDays.join(", ") || "—"}.`,
+      ? "No weak spots - all must-haves covered and confidence is solid."
+      : `${low.length} shaky card(s), ${uncoveredMusts.length} uncovered must-have(s). Revisit days ${focusDays.join(", ") || "-"}.`,
   });
-});
+}));
 
 export default r;

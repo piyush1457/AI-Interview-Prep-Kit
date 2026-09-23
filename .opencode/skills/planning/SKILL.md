@@ -84,11 +84,11 @@ Brief summary when implementation is complete.
 
 ## Process
 
-1. **Read the approved design document** — understand the scope and decisions
-2. **Create the plan file** — use today's date and a descriptive topic slug
-3. **Fill in all sections** — be specific about file paths, code changes, and test cases
-4. **Cross-reference** — link to the design doc, related plans, and AGENTS_CONTEXT.md
-5. **Present to user** — ask for approval before implementation begins
+1. **Read the approved design document** - understand the scope and decisions
+2. **Create the plan file** - use today's date and a descriptive topic slug
+3. **Fill in all sections** - be specific about file paths, code changes, and test cases
+4. **Cross-reference** - link to the design doc, related plans, and AGENTS_CONTEXT.md
+5. **Present to user** - ask for approval before implementation begins
 
 ## Location
 

@@ -34,7 +34,7 @@ function formatCreated(iso?: string) {
 }
 
 function errText(e: unknown): string {
-  return e instanceof Error ? e.message : "Request failed — try again.";
+  return e instanceof Error ? e.message : "Request failed - try again.";
 }
 
 function KitsContent() {
@@ -44,16 +44,17 @@ function KitsContent() {
   const [jd, setJd] = useState("");
   const [url, setUrl] = useState("");
   const [days, setDays] = useState(5);
-  const [msg, setMsg] = useState("");
+  const [errMsg, setErrMsg] = useState("");
+  const [infoMsg, setInfoMsg] = useState("");
   const [creating, setCreating] = useState(false);
   const jdRef = useRef<HTMLTextAreaElement>(null);
 
   const load = useCallback(async () => {
     try {
       setKits(await api.listKits());
-      setMsg("");
+      setErrMsg("");
     } catch (e: unknown) {
-      setMsg(errText(e));
+      setErrMsg(errText(e));
     } finally {
       setLoading(false);
     }
@@ -66,10 +67,10 @@ function KitsContent() {
         const data = await api.listKits();
         if (active) {
           setKits(data);
-          setMsg("");
+          setErrMsg("");
         }
       } catch (e: unknown) {
-        if (active) setMsg(errText(e));
+        if (active) setErrMsg(errText(e));
       } finally {
         if (active) setLoading(false);
       }
@@ -82,12 +83,12 @@ function KitsContent() {
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
-    setMsg("");
+    setErrMsg("");
     try {
       const r = await api.createKit(jd, url, days);
       router.push(`/kits/${r.kitId}`);
     } catch (err: unknown) {
-      setMsg(errText(err));
+      setErrMsg(errText(err));
       setCreating(false);
     }
   };
@@ -107,7 +108,7 @@ function KitsContent() {
       <section className="card mt-8" aria-label="Create kit">
         <p className="eyebrow">01 · New kit</p>
         <form onSubmit={create} className="mt-4">
-          <Field label="Job description" hint="Paste the full posting — skills, seniority, responsibilities.">
+          <Field label="Job description" hint="Paste the full posting - skills, seniority, responsibilities.">
             {(id) => (
               <textarea
                 id={id}
@@ -150,9 +151,14 @@ function KitsContent() {
               )}
             </Field>
           </div>
-          {msg && (
+          {errMsg && (
             <p className="mt-4 text-sm text-danger" role="alert">
-              {msg}
+              {errMsg}
+            </p>
+          )}
+          {infoMsg && (
+            <p className="mt-4 text-sm text-charcoal" role="status">
+              {infoMsg}
             </p>
           )}
           <div className="mt-5 flex flex-wrap items-center gap-4">
@@ -169,7 +175,8 @@ function KitsContent() {
       <div className="mt-6">
         <BatchUpload
           onDone={(ids) => {
-            setMsg(`Queued ${ids.length} kits.`);
+            setErrMsg("");
+            setInfoMsg(`Queued ${ids.length} kits.`);
             void load();
           }}
         />
@@ -187,7 +194,7 @@ function KitsContent() {
               title="No kits yet"
               body={
                 <>
-                  Paste a job description above and we&apos;ll build a research-backed prep kit —
+                  Paste a job description above and we&apos;ll build a research-backed prep kit -
                   question banks, flashcards and a schedule sized to your deadline.
                 </>
               }
@@ -230,7 +237,7 @@ function KitsContent() {
         )}
         {kits.length > 0 && kits.some((k) => k.status === "failed") && (
           <p className="mt-4 text-sm text-danger" role="alert">
-            Some kits failed to generate — open one to see the error.
+            Some kits failed to generate - open one to see the error.
           </p>
         )}
       </section>

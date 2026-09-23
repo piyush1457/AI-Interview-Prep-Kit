@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { KitStep } from "@/lib/types";
 
 const STEPS = [
@@ -21,49 +21,79 @@ interface LiveState {
 export default function KitGenerationProgress({
   kitId,
   status,
+  onTerminal,
 }: {
   kitId: string;
   status: string;
+  /** Called once when the kit reaches done/failed so the parent can reload data (no window.location). */
+  onTerminal?: (status: string) => void;
 }) {
   const [live, setLive] = useState<LiveState | null>(null);
   const [sseFailed, setSseFailed] = useState(false);
   const [startedAt] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
+  const terminalNotified = useRef(false);
+
+  const notifyTerminal = (s: string) => {
+    if (terminalNotified.current) return;
+    terminalNotified.current = true;
+    onTerminal?.(s);
+  };
 
   useEffect(() => {
     if (status === "done" || status === "failed") return;
     const src = new EventSource(`/api/kits/${kitId}/stream`);
+    let consecutiveErrors = 0;
     src.onmessage = (e) => {
+      consecutiveErrors = 0;
       try {
-        setLive(JSON.parse(e.data) as LiveState);
+        const parsed = JSON.parse(e.data) as LiveState;
+        setLive(parsed);
+        if (parsed.status === "done" || parsed.status === "failed") {
+          src.close();
+          notifyTerminal(parsed.status);
+        }
       } catch {
         /* ignore malformed frame */
       }
     };
     src.onerror = () => {
-      setSseFailed(true);
-      src.close();
+      // EventSource auto-reconnects; only fall back to polling after repeated failures.
+      consecutiveErrors += 1;
+      if (consecutiveErrors >= 3) {
+        setSseFailed(true);
+        src.close();
+      }
     };
     return () => src.close();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kitId, status]);
 
-  // polling fallback when SSE stalls (Vercel buffering)
+  // polling fallback when SSE fails (Vercel buffering / stream drop)
   useEffect(() => {
     if (!sseFailed || status === "done" || status === "failed") return;
+    let stopped = false;
     const t = setInterval(async () => {
+      if (stopped) return;
       try {
         const r = await fetch(`/api/kits/${kitId}`, { credentials: "include" });
+        if (!r.ok) return;
         const k = (await r.json()) as { status: string; steps?: KitStep[] };
         setLive({ status: k.status, steps: k.steps });
         if (k.status === "done" || k.status === "failed") {
+          stopped = true;
           clearInterval(t);
-          window.location.reload();
+          notifyTerminal(k.status);
         }
       } catch {
         /* keep polling */
       }
     }, 3000);
-    return () => clearInterval(t);
+    return () => {
+      stopped = true;
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sseFailed, kitId, status]);
 
   useEffect(() => {
@@ -72,7 +102,14 @@ export default function KitGenerationProgress({
   }, [startedAt]);
 
   const cur = live?.status || status;
-  const mapped = cur === "running" ? "generating" : cur;
+  // Prefer the latest pipeline step from SSE/poll so the checklist advances live.
+  const stepKeys = STEPS.map((s) => s.key);
+  const lastStep = [...(live?.steps ?? [])].reverse().find((s) => s.step && stepKeys.includes(s.step))?.step;
+  let mapped: string;
+  if (cur === "done" || lastStep === "done") mapped = "done";
+  else if (lastStep && lastStep !== "queued") mapped = lastStep;
+  else if (cur === "running") mapped = "generating";
+  else mapped = cur;
   const idx = Math.max(
     0,
     STEPS.findIndex((s) => s.key === mapped)
@@ -135,11 +172,11 @@ export default function KitGenerationProgress({
 
       {sseFailed && (
         <p className="mt-4 font-mono text-[11px] text-ash">
-          Live stream buffered — polling every 3s instead.
+          Live stream buffered - polling every 3s instead.
         </p>
       )}
       <p className="mt-4 text-sm text-pebble">
-        Typical run: 30–90 seconds. You can leave this page — we&apos;ll keep going.
+        Typical run: 30–90 seconds. You can leave this page - we&apos;ll keep going.
       </p>
     </div>
   );

@@ -38,7 +38,13 @@ function loadCases() {
     console.error(`[evaluate] input not found: ${input} (cwd ${process.cwd()}, resolved ${resolvedInput})`);
     process.exit(1);
   }
-  const rawCases: any[] = JSON.parse(fs.readFileSync(resolvedInput, "utf8"));
+  let rawCases: any;
+  try {
+    rawCases = JSON.parse(fs.readFileSync(resolvedInput, "utf8"));
+  } catch (e: any) {
+    console.error(`[evaluate] input is not valid JSON: ${e?.message || e}`);
+    process.exit(1);
+  }
   if (!Array.isArray(rawCases)) { console.error("[evaluate] input must be an array"); process.exit(1); }
   return { rawCases, output };
 }
@@ -81,21 +87,38 @@ export async function runCase(c: any, pipeline = runPipeline) {
   }
 }
 
-/** Outer wall-clock race: resolves batch results, or BATCH_TIMEOUT entries on expiry. */
-export async function withWallClock<T>(batchPromise: Promise<T[]>, ids: string[], wallMs = BATCH_WALL_MS): Promise<T[]> {
+/**
+ * Outer wall-clock race: resolves batch results as they complete, or merges
+ * already-finished entries with BATCH_TIMEOUT for still-pending ids on expiry.
+ * Completed cases are never discarded (getCompleted is read at timeout).
+ */
+export async function withWallClock<T extends { id: string }>(
+  batchPromise: Promise<T[]>,
+  ids: string[],
+  wallMs = BATCH_WALL_MS,
+  getCompleted?: () => T[]
+): Promise<T[]> {
   let wallTimer: any;
   const wall = new Promise<T[]>((resolve) => {
     wallTimer = setTimeout(() => {
-      resolve(ids.map((id) => ({ id, status: "failed", kit: null, error: { code: ErrorCode.BATCH_TIMEOUT, message: "outer wall-clock exceeded" } }) as unknown as T));
+      const done = getCompleted?.() ?? [];
+      const byId = new Map(done.map((x) => [x.id, x]));
+      const merged = ids.map(
+        (id) =>
+          byId.get(id) ??
+          ({
+            id,
+            status: "failed",
+            kit: null,
+            error: { code: ErrorCode.BATCH_TIMEOUT, message: "outer wall-clock exceeded" },
+          } as unknown as T)
+      );
+      resolve(merged);
     }, wallMs);
     wallTimer?.unref?.();
   });
-  let done = false;
   try {
-    return await Promise.race([
-      batchPromise.then((kits) => { done = true; return kits; }),
-      wall,
-    ]);
+    return await Promise.race([batchPromise, wall]);
   } finally {
     clearTimeout(wallTimer);
   }
@@ -103,8 +126,24 @@ export async function withWallClock<T>(batchPromise: Promise<T[]>, ids: string[]
 
 async function main() {
   const { rawCases, output } = loadCases();
-  const batchPromise = Promise.all(rawCases.map((c) => limit(() => runCase(c))));
-  const kits = await withWallClock(batchPromise, rawCases.map((c: any) => String(c?.id || "unknown")));
+  // Track finished entries so wall-clock expiry can flush them (not discard).
+  const finished = new Map<string, any>();
+  const batchPromise = Promise.all(
+    rawCases.map((c) =>
+      limit(() =>
+        runCase(c).then((entry) => {
+          finished.set(String(entry.id), entry);
+          return entry;
+        })
+      )
+    )
+  );
+  const kits = await withWallClock(
+    batchPromise,
+    rawCases.map((c: any) => String(c?.id || "unknown")),
+    BATCH_WALL_MS,
+    () => [...finished.values()]
+  );
   const out: any = { version: "1.0", generated_at: new Date().toISOString(), kits };
   const v = BatchOutputSchema.safeParse(out);
   if (!v.success) { console.error("[evaluate] output schema invalid", v.error.message); process.exit(1); }

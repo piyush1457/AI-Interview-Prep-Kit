@@ -11,7 +11,7 @@ const eslintConfig = defineConfig([
         "error",
         {
           selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
-          message: "Do not use dangerouslySetInnerHTML on kit/brief/question content — render as text only (Sec 11 untrusted crawl).",
+          message: "Do not use dangerouslySetInnerHTML on kit/brief/question content - render as text only (Sec 11 untrusted crawl).",
         },
       ],
     },

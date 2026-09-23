@@ -7,13 +7,26 @@ import Field from "@/components/atoms/Field";
 export default function BriefEditor({
   brief,
   onSave,
+  regenPending,
 }: {
   brief?: CompanyBrief | null;
   onSave: (b: BriefSave) => void;
+  regenPending?: boolean;
 }) {
   const [summary, setSummary] = useState(brief?.summary || "");
   const [what, setWhat] = useState(brief?.what_they_do || "");
   const [pending, setPending] = useState(false);
+  const [seen, setSeen] = useState({
+    summary: brief?.summary,
+    what: brief?.what_they_do,
+  });
+
+  // Adjust local fields during render when the server brief changes (regen/reload).
+  if (seen.summary !== brief?.summary || seen.what !== brief?.what_they_do) {
+    setSeen({ summary: brief?.summary, what: brief?.what_they_do });
+    setSummary(brief?.summary || "");
+    setWhat(brief?.what_they_do || "");
+  }
 
   return (
     <section className="card" aria-label="Company brief">
@@ -24,9 +37,10 @@ export default function BriefEditor({
             size="sm"
             variant="outline"
             data-regen="brief"
+            pending={regenPending}
             onClick={() => onSave({ regen: "brief" })}
           >
-            Regenerate
+            {regenPending ? "Regenerating…" : "Regenerate"}
           </Button>
           <Button
             size="sm"

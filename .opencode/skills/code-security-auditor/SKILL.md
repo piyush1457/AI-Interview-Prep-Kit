@@ -139,7 +139,7 @@ List specific patterns that strongly indicate malicious code:
 Choose ONE and provide justification:
 - **SAFE TO RUN**: No significant risks identified
 - **SAFE WITH SANDBOX ONLY**: Risks exist but contained by sandbox
-- **HIGH RISK — DO NOT RUN**: Significant malicious indicators found
+- **HIGH RISK - DO NOT RUN**: Significant malicious indicators found
 
 ## Constraints
 

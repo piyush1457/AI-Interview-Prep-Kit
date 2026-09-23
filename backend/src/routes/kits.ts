@@ -1,10 +1,38 @@
 import { Router } from "express";
 import { z } from "zod";
-import { dedupeHash } from "@ai-prep/kit-schema";
+import { dedupeHash, validateKit } from "@ai-prep/kit-schema";
 import { requireAuth } from "../middleware/owner.js";
+import { asyncHandler } from "../middleware/asyncHandler.js";
 import { Kit } from "../models/Kit.js";
 import { Job } from "../models/Job.js";
 import { runPipeline } from "../services/runPipeline.js";
+
+// Only these origins are legal in _meta; client PATCHes cannot invent others.
+const META_ORIGINS = new Set(["generated", "edited", "pinned"]);
+
+/** Sanitize client-supplied _meta on PATCH (Zod strips it during validate; we persist intentionally). */
+export function sanitizePatchMeta(patch: any): any {
+  const kit = JSON.parse(JSON.stringify(patch));
+  const fix = (item: any) => {
+    if (!item || typeof item !== "object") return;
+    const origin = item._meta?.origin;
+    if (origin && META_ORIGINS.has(origin)) return;
+    // Missing/invalid origin on a user mutation counts as a hand edit (pinned through regen).
+    item._meta = { origin: "edited" };
+  };
+  for (const q of kit.questions || []) fix(q);
+  for (const f of kit.flashcards || []) fix(f);
+  if (kit.company_brief && typeof kit.company_brief === "object") fix(kit.company_brief);
+  return kit;
+}
+
+/** Parse If-Match header: returns a positive integer version or null if missing/invalid. */
+export function parseIfMatch(header: unknown): number | null {
+  if (header == null || header === "") return null;
+  const raw = Array.isArray(header) ? header[0] : header;
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 1 ? n : null;
+}
 
 // Tag every generated item so later regens can preserve hand edits.
 export function tagGenerated(out: any): any {
@@ -20,7 +48,10 @@ export function mergeRegen(existing: any, fresh: any, scope: { type: "brief" } |
   const kit = JSON.parse(JSON.stringify(existing));
   const isPinned = (x: any) => x?._meta?.origin === "edited" || x?._meta?.origin === "pinned";
   if (scope.type === "brief" && fresh.company_brief) {
-    kit.company_brief = { ...fresh.company_brief, _meta: { origin: "generated" } };
+    // Hand-edited brief survives brief-scope regen (matches "survives regen" badge).
+    if (!isPinned(kit.company_brief)) {
+      kit.company_brief = { ...fresh.company_brief, _meta: { origin: "generated" } };
+    }
   } else if (scope.type === "category") {
     const cat = (scope as { type: "category"; category: string }).category;
     // keep: pinned items (any category) + non-pinned items of OTHER categories.
@@ -42,13 +73,13 @@ const r = Router();
 r.use(requireAuth);
 
 const createSchema = z.object({
-  jd: z.string().min(1),
-  company_url: z.string().min(1),
+  jd: z.string().trim().min(1),
+  company_url: z.string().trim().min(1),
   days: z.number().int().min(1).max(60),
 });
 
 // POST /api/kits -> dedupe -> job -> run async
-r.post("/", async (req: any, res) => {
+r.post("/", asyncHandler(async (req: any, res) => {
   const p = createSchema.safeParse(req.body);
   if (!p.success) return res.status(400).json({ code: "VALIDATION", message: p.error.message });
   const userId = String(req.userId);
@@ -61,31 +92,69 @@ r.post("/", async (req: any, res) => {
     jd: p.data.jd, company_url: p.data.company_url, days: p.data.days,
   });
   const job = await Job.create({ kitId: kit._id, step: "queued", status: "queued" });
-  // fire-and-forget worker (in-process)
-  runPipeline({ ...p.data }).then(async ({ kit: out, context }) => {
+  // fire-and-forget worker (in-process); onStep pushes live step + status=running for SSE/poll UI
+  runPipeline(
+    { ...p.data },
+    {
+      onStep: async (step: string, st: string) => {
+        try {
+          if (st !== "done") {
+            await Kit.findByIdAndUpdate(kit._id, {
+              $set: { status: "running" },
+              $push: { steps: { step, at: new Date() } },
+            });
+            await Job.findByIdAndUpdate(job._id, { $set: { step, status: "running" } });
+          }
+        } catch {
+          /* progress updates are best-effort */
+        }
+      },
+    }
+  ).then(async ({ kit: out, context, warnings }) => {
     const tagged: any = tagGenerated(out);
-    await Kit.findByIdAndUpdate(kit._id, { $set: { kit: tagged, context, status: "done" }, $push: { steps: { step: "done", at: new Date() } }, $inc: { version: 1 } });
+    await Kit.findByIdAndUpdate(kit._id, {
+      $set: { kit: tagged, context, warnings: warnings || [], status: "done" },
+      $push: { steps: { step: "done", at: new Date() } },
+      $inc: { version: 1 },
+    });
     await Job.findByIdAndUpdate(job._id, { $set: { step: "done", status: "done" } });
   }).catch(async (e: any) => {
     await Kit.findByIdAndUpdate(kit._id, { $set: { status: "failed", error: { code: e?.code || "SCHEMA_INVALID", message: e?.message || "failed" } } });
     await Job.findByIdAndUpdate(job._id, { $set: { step: "failed", status: "failed", error: { code: e?.code || "SCHEMA_INVALID", message: e?.message || "failed" } } });
   });
   res.status(202).json({ kitId: String(kit._id), jobId: String(job._id) });
-});
+}));
 
-r.get("/", async (req: any, res) => {
+r.get("/", asyncHandler(async (req: any, res) => {
   const kits = await Kit.find({ owner: req.userId }).sort({ updatedAt: -1 }).limit(50);
-  res.json(kits.map((k) => ({ id: String(k._id), status: k.status, updatedAt: (k as any).updatedAt })));
-});
+  res.json(
+    kits.map((k) => ({
+      id: String(k._id),
+      status: k.status,
+      updatedAt: (k as any).updatedAt,
+      created_at: (k as any).createdAt,
+      days: k.days,
+      version: (k as any).version,
+      // slim projection for list rows - full kit still loads on GET /:id
+      kit: k.kit
+        ? {
+            role: k.kit.role,
+            source: k.kit.source ? { company: k.kit.source.company } : undefined,
+            schedule: k.kit.schedule ? { days_available: k.kit.schedule.days_available } : undefined,
+          }
+        : null,
+    }))
+  );
+}));
 
-r.get("/:id", async (req: any, res) => {
+r.get("/:id", asyncHandler(async (req: any, res) => {
   const k = await Kit.findOne({ _id: req.params.id, owner: req.userId });
   if (!k) return res.status(404).json({ code: "VALIDATION", message: "not found" });
   res.json(k);
-});
+}));
 
 // SSE progress stream
-r.get("/:id/stream", async (req: any, res) => {
+r.get("/:id/stream", asyncHandler(async (req: any, res) => {
   const k = await Kit.findOne({ _id: req.params.id, owner: req.userId });
   if (!k) return res.status(404).json({ code: "VALIDATION", message: "not found" });
   res.setHeader("Content-Type", "text/event-stream");
@@ -101,22 +170,33 @@ r.get("/:id/stream", async (req: any, res) => {
     if (cur.status === "done" || cur.status === "failed") { clearInterval(timer); res.end(); }
   }, 2000);
   req.on("close", () => clearInterval(timer));
-});
+}));
 
-// PATCH with If-Match version (409 on stale)
-r.patch("/:id", async (req: any, res) => {
-  const match = Number(req.headers["if-match"]);
-  const k = await Kit.findOne({ _id: req.params.id, owner: req.userId });
-  if (!k) return res.status(404).json({ code: "VALIDATION", message: "not found" });
-  if (match && match !== (k as any).version) {
-    return res.status(409).json({ code: "VALIDATION", message: "stale version; refetch and re-apply", kit: k });
+// PATCH: requires If-Match; atomic version CAS so two tabs cannot clobber.
+r.patch("/:id", asyncHandler(async (req: any, res) => {
+  const match = parseIfMatch(req.headers["if-match"]);
+  if (match == null) {
+    return res.status(428).json({ code: "VALIDATION", message: "If-Match version required" });
   }
   const patch = req.body?.kit;
   if (!patch) return res.status(400).json({ code: "VALIDATION", message: "kit patch required" });
-  (k as any).kit = patch;
-  (k as any).version += 1;
-  await k.save();
-  res.json(k);
-});
+  // Validate Appendix A structure before save; keep client _meta (zod would strip it from parsed output).
+  const v = validateKit(patch);
+  if (!v.success)
+    return res.status(400).json({ code: "VALIDATION", message: v.error.message.slice(0, 300) });
+  const sanitized = sanitizePatchMeta(patch);
+  // Atomic compare-and-set: only write when stored version still equals If-Match.
+  const updated = await Kit.findOneAndUpdate(
+    { _id: req.params.id, owner: req.userId, version: match },
+    { $set: { kit: sanitized }, $inc: { version: 1 } },
+    { new: true }
+  );
+  if (!updated) {
+    const fresh = await Kit.findOne({ _id: req.params.id, owner: req.userId });
+    if (!fresh) return res.status(404).json({ code: "VALIDATION", message: "not found" });
+    return res.status(409).json({ code: "VALIDATION", message: "stale version; refetch and re-apply", kit: fresh });
+  }
+  res.json(updated);
+}));
 
 export default r;

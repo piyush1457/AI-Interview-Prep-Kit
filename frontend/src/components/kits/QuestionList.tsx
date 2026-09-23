@@ -132,6 +132,7 @@ export default function QuestionList({
   onDelete,
   onAdd,
   onRegen,
+  regenPending,
 }: {
   category: string;
   eyebrow?: string;
@@ -142,6 +143,7 @@ export default function QuestionList({
   onDelete: (id: string) => void;
   onAdd: () => void;
   onRegen: () => void;
+  regenPending?: boolean;
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -157,8 +159,8 @@ export default function QuestionList({
           <Button size="sm" variant="outline" onClick={onAdd}>
             + Add
           </Button>
-          <Button size="sm" variant="outline" onClick={onRegen}>
-            Regenerate category
+          <Button size="sm" variant="outline" pending={regenPending} onClick={onRegen}>
+            {regenPending ? "Regenerating…" : "Regenerate category"}
           </Button>
         </div>
       </div>
@@ -179,7 +181,7 @@ export default function QuestionList({
           <ul className="mt-4 flex flex-col gap-2">
             {questions.length === 0 && (
               <li className="py-3 text-sm text-ash">
-                No questions in this category yet — add one or regenerate.
+                No questions in this category yet - add one or regenerate.
               </li>
             )}
             {questions.map((q) => (

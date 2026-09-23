@@ -12,9 +12,9 @@ Frontend is functionally complete but visually an untouched AI scaffold (create-
 
 | Decision | Choice |
 |---|---|
-| Visual direction | Apollo (warm limestone canvas, flat, single highlighter CTA) — chosen over Hatch/Antimetal/Obscura/Miranda for professional fit |
-| Dark mode | Removed — light-only, deletes inconsistent `prefers-color-scheme` block |
-| Design-system delivery | Tailwind 4 `@theme` tokens + `@layer components` classes (`.btn`, `.card`, `.eyebrow`…) — one source of truth, no hardcoded hex in JSX |
+| Visual direction | Apollo (warm limestone canvas, flat, single highlighter CTA) - chosen over Hatch/Antimetal/Obscura/Miranda for professional fit |
+| Dark mode | Removed - light-only, deletes inconsistent `prefers-color-scheme` block |
+| Design-system delivery | Tailwind 4 `@theme` tokens + `@layer components` classes (`.btn`, `.card`, `.eyebrow`…) - one source of truth, no hardcoded hex in JSX |
 | Fonts | next/font: Fraunces (display 500/600), Inter (body), JetBrains Mono (eyebrows/meta) |
 | Auth guard | Client hook `useRequireAuth()` inside `AppShell` (one guard covers /kits + builder + practice); 401 → `/login?next=` |
 | State/fetch | Keep existing `lib/api.ts` fetch client; only add `status`/`code` on thrown errors. No TanStack Query/Zustand migration in this pass |
@@ -33,21 +33,21 @@ Tokens in `globals.css` (`@theme`) → component classes (`@layer components`) �
 
 ## Changes by File
 
-1. `frontend/src/app/globals.css` — replace scaffold vars with Apollo `@theme` (colors, fonts, radius), body = `bg-limestone text-charcoal`, `@layer components` (btn variants, card, input family, eyebrow, badge variants, field), keep focus-visible (indigo) + print rules; drop dark-mode block.
-2. `frontend/src/app/layout.tsx` — Fraunces/Inter/JetBrains real `next/font` vars; metadata `AI Interview Prep Kit` + real description; body classes.
-3. `frontend/src/components/atoms/{Button,Field,Badge,Spinner,EmptyState}.tsx` — new; forwardRef Button with `variant: primary|outline|ghost|danger`, `pending` state.
-4. `frontend/src/components/organisms/AppShell.tsx` — new; sticky marble header, wordmark, Kits link, email + Log out / Sign in; runs `useRequireAuth()`.
-5. `frontend/src/lib/auth.ts` — new `useRequireAuth()` hook (api.me → 401 redirect with `?next=`).
-6. `frontend/src/lib/api.ts` — attach `status` + body `code` to thrown errors; `logout` returns to `/` handled by caller.
-7. `frontend/src/app/page.tsx` — Apollo hero (display 88/48px, highlighter wash, CTA pair) + 3 numbered feature cards + footer; metadata inline.
-8. `frontend/src/app/login/page.tsx` — wired form: api.login, `?next=` redirect, code-based errors, pending spinner, link to register.
-9. `frontend/src/app/register/page.tsx` — new; api.register, ≥6-char hint, same error pattern.
-10. `frontend/src/app/kits/page.tsx` — AppShell; header + create form (`.field`s, disabled logic preserved); kit rows as cards with role/company/mono meta/status badge; EmptyState; error banner.
-11. `frontend/src/components/kits/BatchUpload.tsx` — `<details>` disclosure restyle, mono textarea.
-12. `frontend/src/app/kits/[id]/page.tsx` — AppShell; sub-header (back, Saving/Saved, conflict banner, Practice CTA); eyebrow-numbered sections; schedule shows `N questions` not raw ids; regen handlers unchanged.
-13. `frontend/src/components/kits/{BriefEditor,QuestionList,KitGenerationProgress,ThinKitNotice}.tsx` — token classes, eyebrow numbers, semantic badges; SSE/poll/dnd logic byte-identical.
-14. `frontend/src/app/kits/[id]/practice/page.tsx` — AppShell; header + print button.
-15. `frontend/src/components/practice/{FlashcardRunner,WeakSpots}.tsx` — paper card, mono progress, outline semantic confidence buttons; record/order logic unchanged.
+1. `frontend/src/app/globals.css` - replace scaffold vars with Apollo `@theme` (colors, fonts, radius), body = `bg-limestone text-charcoal`, `@layer components` (btn variants, card, input family, eyebrow, badge variants, field), keep focus-visible (indigo) + print rules; drop dark-mode block.
+2. `frontend/src/app/layout.tsx` - Fraunces/Inter/JetBrains real `next/font` vars; metadata `AI Interview Prep Kit` + real description; body classes.
+3. `frontend/src/components/atoms/{Button,Field,Badge,Spinner,EmptyState}.tsx` - new; forwardRef Button with `variant: primary|outline|ghost|danger`, `pending` state.
+4. `frontend/src/components/organisms/AppShell.tsx` - new; sticky marble header, wordmark, Kits link, email + Log out / Sign in; runs `useRequireAuth()`.
+5. `frontend/src/lib/auth.ts` - new `useRequireAuth()` hook (api.me → 401 redirect with `?next=`).
+6. `frontend/src/lib/api.ts` - attach `status` + body `code` to thrown errors; `logout` returns to `/` handled by caller.
+7. `frontend/src/app/page.tsx` - Apollo hero (display 88/48px, highlighter wash, CTA pair) + 3 numbered feature cards + footer; metadata inline.
+8. `frontend/src/app/login/page.tsx` - wired form: api.login, `?next=` redirect, code-based errors, pending spinner, link to register.
+9. `frontend/src/app/register/page.tsx` - new; api.register, ≥6-char hint, same error pattern.
+10. `frontend/src/app/kits/page.tsx` - AppShell; header + create form (`.field`s, disabled logic preserved); kit rows as cards with role/company/mono meta/status badge; EmptyState; error banner.
+11. `frontend/src/components/kits/BatchUpload.tsx` - `<details>` disclosure restyle, mono textarea.
+12. `frontend/src/app/kits/[id]/page.tsx` - AppShell; sub-header (back, Saving/Saved, conflict banner, Practice CTA); eyebrow-numbered sections; schedule shows `N questions` not raw ids; regen handlers unchanged.
+13. `frontend/src/components/kits/{BriefEditor,QuestionList,KitGenerationProgress,ThinKitNotice}.tsx` - token classes, eyebrow numbers, semantic badges; SSE/poll/dnd logic byte-identical.
+14. `frontend/src/app/kits/[id]/practice/page.tsx` - AppShell; header + print button.
+15. `frontend/src/components/practice/{FlashcardRunner,WeakSpots}.tsx` - paper card, mono progress, outline semantic confidence buttons; record/order logic unchanged.
 
 ## Auth Flows / API Contracts
 
@@ -60,7 +60,7 @@ Tokens in `globals.css` (`@theme`) → component classes (`@layer components`) �
 
 ## Tests
 
-1. Existing `frontend/src/lib/kitState.test.ts` — must stay 5/5 (logic untouched).
+1. Existing `frontend/src/lib/kitState.test.ts` - must stay green (logic untouched; suite later grew to 6 with `nextFlashcardId`).
 2. Manual/Playwright: register → lands on /kits empty state; logout → /; login with wrong pw → AUTH error; login with `?next=/kits` → returns; guard: anonymous GET /kits → redirected to /login?next=/kits.
 3. Regression: builder PATCH debounce + Saving/Saved chrome visible; 409 banner path unchanged (code review).
 
@@ -68,16 +68,16 @@ Tokens in `globals.css` (`@theme`) → component classes (`@layer components`) �
 
 ```bash
 npm run typecheck            # all 3 workspaces
-npx vitest run               # in frontend/ → 5 pass
+npx vitest run               # in frontend/ → kitState tests pass
 npm run lint                 # in frontend/ → no errors
 npm run build                # in frontend/ → routes /, /login, /register, /kits, /kits/[id], /kits/[id]/practice
-# Playwright screenshots (webapp-testing): home, register, kits empty, login — 1280px + 390px
+# Playwright screenshots (webapp-testing): home, register, kits empty, login - 1280px + 390px
 ```
 
 ## Security Notes
 
-- Session stays httpOnly SameSite=Lax cookie via same-origin proxy — no token storage introduced.
-- No `dangerouslySetInnerHTML` (eslint-banned) — all content rendered as text nodes.
+- Session stays httpOnly SameSite=Lax cookie via same-origin proxy - no token storage introduced.
+- No `dangerouslySetInnerHTML` (eslint-banned) - all content rendered as text nodes.
 - Register/login continue through existing rate limiter; errors don't leak whether email exists (backend AUTH message).
 
 ## Open Questions / Follow-ups
@@ -90,4 +90,4 @@ npm run build                # in frontend/ → routes /, /login, /register, /ki
 
 ## Status Update (2026-09-23)
 
-Pending implementation.
+Implemented + verified (Playwright E2E); committed in Phase 4 (`f0cf1ae`).

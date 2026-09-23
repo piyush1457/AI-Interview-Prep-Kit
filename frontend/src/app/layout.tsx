@@ -23,7 +23,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "AI Interview Prep Kit",
   description:
-    "Turn any job description into a personalised interview prep kit — company research, categorised question banks, flashcards and a day-by-day study schedule.",
+    "Turn any job description into a personalised interview prep kit - company research, categorised question banks, flashcards and a day-by-day study schedule.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

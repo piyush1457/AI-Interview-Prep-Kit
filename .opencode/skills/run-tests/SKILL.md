@@ -1,6 +1,6 @@
 ---
 name: run-tests
-description: Run Vitest/Jest tests for frontend and Node/Express backend with proper environment setup, single-file and coverage runs, and failure analysis. Includes mandatory schedule/coverage/validation suites for FS-AI-INTERVIEW-01.
+description: Run Vitest/Jest tests for frontend and Node/Express backend with proper environment setup, single-file runs, and failure analysis. Includes mandatory schedule/coverage/validation suites for FS-AI-INTERVIEW-01.
 compatibility: opencode
 metadata:
   audience: developers
@@ -30,16 +30,17 @@ npm run test -- kit-validate.test
 
 ### Coverage
 ```bash
-npm run test -- --coverage
+# Coverage requires @vitest/coverage-v8 (not installed); use plain runs for CI gates.
+npm run test
 ```
 
 ### Setup Notes
 - Frontend: tests run in jsdom via Vitest (see `vitest.config` / `vite.config`).
 - React Testing Library for component tests; `@testing-library/jest-dom` for matchers.
-- Mock API layers (TanStack Query hooks, axios, auth storage) — do not hit real backends in unit tests.
-- CI runs `vitest run` (see `.gitlab-ci.yml` / `amplify.yml`).
+- Mock API layers (TanStack Query hooks, axios, auth storage) - do not hit real backends in unit tests.
+- No hosted CI config in-repo yet; run `npm run test` (root, all workspaces) before submitting.
 
-### Mandatory Suites — FS-AI-INTERVIEW-01 Sec 14 (scored, must protect)
+### Mandatory Suites - FS-AI-INTERVIEW-01 Sec 14 (scored, must protect)
 Brief Sec 14 requires automated tests for schedule allocation, coverage checking, structure validation.
 Keep these deterministic (no LLM/network) and fast:
 - `schedule.test` (allocation is arithmetic in code, Sec 8): days count == days requested;
@@ -60,4 +61,4 @@ Keep these deterministic (no LLM/network) and fast:
 ### Failure Analysis
 - Read the failing test's expected vs received output first.
 - Check whether the failure is an assertion mismatch, a missing mock, or an environment issue (window/localStorage/sessionStorage mocks).
-- Verify `npm run typecheck` passes — type errors often surface as test-time import failures.
+- Verify `npm run typecheck` passes - type errors often surface as test-time import failures.

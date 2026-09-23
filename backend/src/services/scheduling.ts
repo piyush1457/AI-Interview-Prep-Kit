@@ -10,7 +10,14 @@ export interface ScheduleDay {
 // Deterministic arithmetic allocation (NEVER LLM per brief Sec 3/8):
 // - exactly N days; every must-have appears somewhere; int minutes;
 // - harder (difficulty 3) + must priority first, not the night before.
-export function allocateSchedule(days: number, questions: Question[], reqs: Requirement[]): ScheduleDay[] {
+// `variant` (default 0) is only used on explicit Regenerate: keeps day 1's
+// hard pack, rotates the remaining day buckets so the plan actually changes.
+export function allocateSchedule(
+  days: number,
+  questions: Question[],
+  reqs: Requirement[],
+  variant = 0
+): ScheduleDay[] {
   const n = Math.max(1, Math.min(60, Math.floor(days)));
   const qById = new Map(questions.map((q) => [q.id, q]));
   const mustIds = new Set(reqs.filter((r) => r.priority === "must").map((r) => r.id));
@@ -19,6 +26,16 @@ export function allocateSchedule(days: number, questions: Question[], reqs: Requ
 
   const buckets: Question[][] = Array.from({ length: n }, () => []);
   sorted.forEach((q, i) => buckets[i % n].push(q));
+
+  // Regen variant: day 0 keeps the hard/must pack; days 1..n-1 rotate.
+  if (variant > 0 && n > 1) {
+    const head = buckets[0];
+    const tail = buckets.slice(1);
+    // variant 1 => shift by 1 (never a no-op unless tail.length === 1)
+    const r = ((variant % tail.length) + tail.length) % tail.length;
+    buckets.length = 0;
+    buckets.push(head, ...tail.slice(r), ...tail.slice(0, r));
+  }
 
   // guarantee: every must appears (if a must has zero questions, coverage flags it; schedule still exact)
   const covered = new Set<string>();

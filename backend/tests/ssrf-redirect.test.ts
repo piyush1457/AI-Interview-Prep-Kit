@@ -38,4 +38,13 @@ describe("SSRF: direct + redirect hops blocked", () => {
     await expect(resolveAndCheck("169.254.169.254")).rejects.toMatchObject({ code: "COMPANY_UNREACHABLE" });
     process.env.ALLOW_LOCALHOST = "true";
   });
+
+  it("ALLOW_LOCALHOST still blocks non-loopback private/metadata IPs", async () => {
+    process.env.ALLOW_LOCALHOST = "true";
+    // Bypass is loopback-only: metadata + RFC1918 stay blocked even with the flag on.
+    await expect(resolveAndCheck("169.254.169.254")).rejects.toMatchObject({ code: "COMPANY_UNREACHABLE" });
+    await expect(resolveAndCheck("10.0.0.5")).rejects.toMatchObject({ code: "COMPANY_UNREACHABLE" });
+    // IPv4-mapped IPv6 loopback hole is closed for non-loopback targets too.
+    await expect(resolveAndCheck("::ffff:169.254.169.254")).rejects.toMatchObject({ code: "COMPANY_UNREACHABLE" });
+  });
 });

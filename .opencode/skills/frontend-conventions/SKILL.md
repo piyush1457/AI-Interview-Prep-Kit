@@ -13,7 +13,7 @@ metadata:
 - Styling: Tailwind utilities + CSS-variable design tokens. **No styled-components, no SCSS.**
 - Routing: React Router v7. PWA: vite-plugin-pwa (Workbox). No Capacitor.
 
-## Framework Override — FS-AI-INTERVIEW-01 (Next.js + Tailwind)
+## Framework Override - FS-AI-INTERVIEW-01 (Next.js + Tailwind)
 When building the AI Interview Prep Kit assessment (TRAO_ASSESSMENT_ID: FS-AI-INTERVIEW-01),
 the preferred stack in the brief (Section 12 + Preferred Tech Stack) takes precedence over Default:
 - Next.js (App Router) + TypeScript + Tailwind CSS. No Vite, no React Router.
@@ -31,11 +31,11 @@ the preferred stack in the brief (Section 12 + Preferred Tech Stack) takes prece
     arrow-key flashcard stepping, Esc closes modals, visible focus rings).
 
 ## Component Structure (Atomic Design)
-- `atoms/` — primitive UI (button, input, loader, badge, modal). No business logic, no app data.
-- `molecules/` — small composites of atoms (search-bar, form-group).
-- `organisms/` — domain sections wired to data (SignIn, Navbar+Sidebar, Checkout).
-- `templates/` — page-level layout shells (AppWrapper, main).
-- `pages/` — route-level screens; compose organisms; own business logic.
+- `atoms/` - primitive UI (button, input, loader, badge, modal). No business logic, no app data.
+- `molecules/` - small composites of atoms (search-bar, form-group).
+- `organisms/` - domain sections wired to data (SignIn, Navbar+Sidebar, Checkout).
+- `templates/` - page-level layout shells (AppWrapper, main).
+- `pages/` - route-level screens; compose organisms; own business logic.
 - Escalation rule: when a domain outgrows ~2 pages with heavy cross-cutting logic, promote it to `features/<domain>/`. `atoms/` + `molecules/` stay global.
 
 ### Next.js Mapping (FS-AI-INTERVIEW-01)
@@ -53,12 +53,12 @@ Follow the existing sibling pattern:
 
 ## Data Fetching (TanStack Query)
 - Define query keys centrally per domain; use `useQuery`/`useMutation`.
-- Server state lives in the query cache — do not mirror it into Zustand.
+- Server state lives in the query cache - do not mirror it into Zustand.
 - GraphQL (if present) via `graphql-request` or keep Apollo only if schema tooling is critical.
 
 ## State (Zustand)
 - Small client-only state: cart, order draft, UI flags. Persist with `persist()` middleware to localStorage/IndexedDB so UI survives reload offline.
-- Never store tokens in Zustand — tokens live in the auth library's storage.
+- Never store tokens in Zustand - tokens live in the auth library's storage.
 
 ## Auth (JWT via @build-from-bits/jwt-authentication)
 - Access token in `sessionStorage`, refresh token in `localStorage`; auto-refresh on 401.
@@ -67,7 +67,7 @@ Follow the existing sibling pattern:
 
 ## Styling Rules
 - Use Tailwind utility classes in `className` or a `styles.js` map.
-- Dynamic brand values (primary color, font) come from CSS variables in `tokens.css` — never hardcode brand hex in a component.
+- Dynamic brand values (primary color, font) come from CSS variables in `tokens.css` - never hardcode brand hex in a component.
 - Design-system components from `@build-from-bits/ui-primitives` must not be re-implemented.
 
 ## Import Style

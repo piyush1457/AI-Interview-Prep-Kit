@@ -1,7 +1,7 @@
 # Deploy checklist (free tiers)
 
 ## 1. MongoDB Atlas (M0 free)
-1. Create cluster, Database Access user (readWrite), Network Access `0.0.0.0/0` (timebox limitation — see README).
+1. Create cluster, Database Access user (readWrite), Network Access `0.0.0.0/0` (timebox limitation - see README).
 2. Connection string: `mongodb+srv://USER:PASS@HOST/ai-prep-kit?retryWrites=true&w=majority`.
 
 ## 2. Backend on Render (free web service)

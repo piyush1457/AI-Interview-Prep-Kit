@@ -47,4 +47,29 @@ describe("allocateSchedule (deterministic, never LLM)", () => {
     expect(one[0].question_ids).toEqual(expect.arrayContaining(["q1", "q2", "q3"]));
     expect(allocateSchedule(60, qs, reqs)[59].day).toBe(60);
   });
+
+  it("regen variant re-rolls non-day-1 buckets but keeps day-1 hard pack + constraints", () => {
+    const many: Question[] = Array.from({ length: 9 }, (_, i) => ({
+      id: `q${i + 1}`,
+      requirement_ids: [i % 2 === 0 ? "r1" : "r3"],
+      category: "technical",
+      prompt: `p${i}`,
+      answer_outline: "a",
+      difficulty: (i % 3) + 1,
+    }));
+    const base = allocateSchedule(4, many, reqs);
+    const rolled = allocateSchedule(4, many, reqs, 1);
+    expect(rolled).toHaveLength(4);
+    // Day 1 keeps the hardest/must pack regardless of variant.
+    expect(rolled[0].question_ids).toEqual(base[0].question_ids);
+    // Some other day's question set actually changes.
+    const baseSets = base.slice(1).map((d) => d.question_ids.join(","));
+    const rolledSets = rolled.slice(1).map((d) => d.question_ids.join(","));
+    expect(rolledSets).not.toEqual(baseSets);
+    // Still exact placement of every question.
+    const placed = rolled.flatMap((d) => d.question_ids).sort();
+    expect(placed).toEqual(many.map((q) => q.id).sort());
+    // Integer minutes preserved.
+    for (const d of rolled) expect(Number.isInteger(d.minutes)).toBe(true);
+  });
 });

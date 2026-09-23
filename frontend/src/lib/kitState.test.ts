@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { markEdited, isPinned, reorderQuestions, moveQuestionCategory, orderPractice, nextQuestionId } from "./kitState";
+import { markEdited, isPinned, reorderQuestions, moveQuestionCategory, orderPractice, nextQuestionId, nextFlashcardId } from "./kitState";
 
 describe("kitState (builder + practice ordering)", () => {
   it("hand edits are flagged so regen preserves them", () => {
@@ -30,5 +30,10 @@ describe("kitState (builder + practice ordering)", () => {
   it("nextQuestionId avoids collisions", () => {
     expect(nextQuestionId([{ id: "q1" }, { id: "q7" }])).toBe("q8");
     expect(nextQuestionId([])).toBe("q1");
+  });
+
+  it("nextFlashcardId avoids collisions", () => {
+    expect(nextFlashcardId([{ id: "f1" }, { id: "f4" }])).toBe("f5");
+    expect(nextFlashcardId([])).toBe("f1");
   });
 });

@@ -49,6 +49,7 @@ export interface Flashcard {
   front: string;
   back?: string;
   requirement_ids?: string[];
+  _meta?: Meta;
 }
 
 export interface ScheduleDay {
@@ -88,7 +89,7 @@ export interface KitDoc {
 export type KitStatus = "queued" | "running" | "done" | "failed" | string;
 
 export interface KitStep {
-  name?: string;
+  step?: string;
   at?: string;
 }
 
@@ -104,6 +105,7 @@ export interface KitEnvelope {
   version?: number;
   kit?: KitDoc | null;
   steps?: KitStep[];
+  warnings?: string[];
   error?: KitError | null;
   created_at?: string;
   days?: number;

@@ -1,7 +1,7 @@
 # AI Interview Prep Kit (FS-AI-INTERVIEW-01)
 
 Turn a job description + company website + days-available into a personalised interview prep kit:
-company brief, role breakdown, categorised question bank, flashcards, day-by-day schedule — all editable,
+company brief, role breakdown, categorised question bank, flashcards, day-by-day schedule - all editable,
 practicable, and reproducible via a batch CLI.
 
 ## Tech stack (chosen = preferred, no deviation to justify)
@@ -17,19 +17,21 @@ practicable, and reproducible via a batch CLI.
 | Public discussion | Brave (if key) → Tavily (if key) → DuckDuckGo HTML (zero key) |
 
 Why Groq `gpt-oss-20b`: Groq retired the Llama chat lineup (verified live against
-`/openai/v1/models` — only `gpt-oss-20b/120b`, `qwen`, `allam` remain for chat).
+`/openai/v1/models` - only `gpt-oss-20b/120b`, `qwen`, `allam` remain for chat).
 `gpt-oss-20b` is the fastest free-tier model with reliable `response_format: json_object`.
 
 ## Setup: local
 
 ```bash
-npm install
+npm install                          # also builds packages/kit-schema (prepare/postinstall)
 cp .env.example .env            # then fill GROQ_API_KEY, MONGODB_URI, SESSION_SECRET
 cp .env backend/.env
 cp .env frontend/.env.local
 npm run dev:backend             # http://localhost:4000
 npm run dev:frontend            # http://localhost:3000 (proxies /api/* -> :4000)
 ```
+
+If `@ai-prep/kit-schema` is missing after a partial install: `npm run build --workspace=packages/kit-schema`.
 
 ## Setup: deployed
 
@@ -47,7 +49,7 @@ npm run evaluate -- --input <cases.json> --output <kits.json>
 - Reads `[{id, jd, company_url, days}]`, runs the **same `runPipeline()` the app uses**
   (not a parallel implementation), `bypassDedupe: true` so reruns are always fresh.
 - Writes `{version: "1.0", generated_at, kits: [{id, status: ok|failed, kit, error}]}`.
-- Continues after one case fails; partial research stays `ok` with honest gaps —
+- Continues after one case fails; partial research stays `ok` with honest gaps -
   only no-kit-at-all is `failed`. Company sites may be `localhost:` URLs, so run with
   `ALLOW_LOCALHOST=true` for local fixtures.
 - Timing: max 3 concurrent cases (`p-limit`), 2.5 min + queue-wait per case,
@@ -82,7 +84,7 @@ Mongo: `users`, `kits {owner, dedupeHash unique, version, status, steps[], kit (
    re-validated each hop, 10 s timeout, 1 MB cap, html/text only, `InterviewPrepKit/1.0` UA.
 2. `crawlCompany` (`crawl.ts`): homepage → `cheerio` link scoring on
    `careers|hiring|jobs|about|handbook|blog|engineering|interview` (ranked, **no hard-coded
-   paths** — GitLab/PostHog-style buried pages are found by score), same-origin relative
+   paths** - GitLab/PostHog-style buried pages are found by score), same-origin relative
    links only, `robots.txt` respected via `robots-parser`, top-5 within a 60 s crawl budget.
 3. Public discussion (`search.ts`): chain Brave → Tavily → DuckDuckGo HTML, top-5 from
    `glassdoor/reddit/leetcode/teamblind` where available; otherwise honest
@@ -101,7 +103,7 @@ Mongo: `users`, `kits {owner, dedupeHash unique, version, status, steps[], kit (
 | S5 | Flashcards (1 per must) | `generation.buildFlashcards` | no (derived) |
 | S6 | **CODE** schedule allocation | `scheduling.allocateSchedule` | no (arithmetic) |
 | S7 | **CODE** coverage check → gap-fill (max 2 passes) | `coverage` + `generateGapFill` | gap-fill only (1 call) |
-| S8 | Zod validate before save; repair-once else `SCHEMA_INVALID` | `kit-schema` | no |
+| S8 | Zod validate before save; throw `SCHEMA_INVALID` if invalid | `kit-schema` | no |
 
 must/nice rule: `required|must|years|proficient` → must; `bonus|nice|plus|preferred` → nice.
 kind rule: stack/tools/years → technical; mentoring/communication → behavioural; industry → domain.
@@ -111,7 +113,7 @@ kind rule: stack/tools/years → technical; mentoring/communication → behaviou
 Every question/flashcard/brief carries `_meta.origin: generated | edited | pinned`
 (`tagGenerated` on creation). Hand edits set `edited` (implies pinned); category moves keep
 the flag. `mergeRegen` on single-section regen drops only stale *generated* items of that
-scope and keeps everything pinned — proven by `concurrency.test.ts`.
+scope and keeps everything pinned - proven by `concurrency.test.ts`.
 Optimistic concurrency: `Kit.version` + `If-Match` on PATCH/regenerate; stale writers get
 409 + the fresh doc (“reloaded, re-apply”) instead of a silent clobber. `_meta` is stripped
 (`stripMeta`) and re-validated before any batch output, so Appendix B stays exact.
@@ -125,7 +127,7 @@ entry validated to exist. 1-day packs all musts; 60-day spreads with review tail
 
 ## Creative feature: why weak-spots + one-pager
 
-The real problem after reading a kit is *“what do I still not know?”* — so practice records
+The real problem after reading a kit is *“what do I still not know?”* - so practice records
 confidence 1–3 per card, the next queue sorts least-confident-first (transparent weighted
 sort, defended over full SM-2 as timebox-appropriate), and `GET /:id/weak-spots` aggregates
 shaky cards + uncovered must-haves + suggested days. The print CSS one-pager is a near-free
@@ -141,7 +143,7 @@ second win for last-day revision. Both reuse existing data; no new pipeline cost
   from deciding; also makes them unit-testable without a key.
 - **Shared Groq queue (1 + 500 ms):** free-tier TPM is per-minute, not per-request; one
   global queue + per-case `queueWaitMs` exclusion (deadline = start + 150 s + wait) prevents
-  both 429 storms and spurious timeouts — at the cost of serial LLM throughput.
+  both 429 storms and spurious timeouts - at the cost of serial LLM throughput.
 - **13 min outer wall-clock:** bounds the batch even when per-case deadlines stretch;
   pending cases become `BATCH_TIMEOUT`, output always writes (2 min margin).
 - **CLI bypasses dedupe:** app dedupes on `sha256(user+jd+url+days)`; batch is “run now”
@@ -156,26 +158,34 @@ second win for last-day revision. Both reuse existing data; no new pipeline cost
 - No Brave key → discussion chain falls to Tavily → DuckDuckGo HTML (fragile to layout change).
 - Practice ordering is a simple confidence sort, not SM-2 spaced repetition.
 - Regen reuses stored crawl context; it does not re-crawl (fresh posting edits need a new kit).
-- In-process workers (no separate queue dyno — Render free sleeps; documented).
+- In-process workers (no separate queue dyno - Render free sleeps; documented).
+
+## Edge cases and failure handling (Sec 10)
+
+| Case | Behaviour |
+|---|---|
+| Invalid company URL / bad scheme | `safeFetch` rejects; recorded as warning; kit still builds (honest brief) |
+| 404 / unreachable host / timeout | `COMPANY_UNREACHABLE` per page; skip-and-record; not fatal to the run |
+| No hiring or about page | `NO_HIRING_PAGE` note + honest thin brief; question gen still runs on JD |
+| Thin 2-line JD (&lt;80 chars) | Deterministic thin path: max 1 requirement, no invented fields |
+| No public discussion | `NO_DISCUSSION` warning; never fatal |
+| Model returns invalid JSON | Fence-strip repair once, else `LLM_INVALID_JSON` (never silent) |
+| LLM rate limit (429) / 5xx | 3× exponential backoff + shared queue (1 + 500 ms) |
+| Same description+company twice | Dedupe hash returns existing kit (`deduped: true`); CLI uses `bypassDedupe` |
+| 1-day or 60-day schedule | Clamped 1–60; 1-day packs all musts; 60-day spreads |
+| Malformed `cases.json` input | CLI exits with clear error before writing output |
+
+Pipeline warnings (`NO_HIRING_PAGE`, crawl errors, timeouts) are persisted on the kit and shown as “Research notes” in the builder.
 
 ## Tests
 
 ```bash
-npm run test --workspace=backend    # 13 files / 35 tests (mocked LLM/fetch, no key needed)
-npm run test --workspace=frontend   # kitState (edit flags, reorder, queue order)
+npm run test --workspace=backend    # 14 files / 46 tests (mocked LLM/fetch, no key needed)
+npm run test --workspace=frontend   # kitState (edit flags, reorder, queue order, id alloc)
 npm run typecheck                   # all 3 workspaces
 ```
 
 Suites: schedule, coverage, kit-validate, llm-retry, ssrf-redirect, dns-rebinding,
-dedupe, dedupe-bypass, batch-upload, concurrency (pinned regen), batch-concurrency
+dedupe, dedupe-bypass, batch-upload, kits-ownership (If-Match/409/owner), concurrency (pinned regen), batch-concurrency
 (shared-queue serialization), batch-output-hygiene (`_meta`), batch-wall-clock
-(`BATCH_TIMEOUT`).
-
-## Video script (3–4 min)
-
-1. (0:00) Paste JD + company URL + days → Generate → SSE progress steps.
-2. (1:00) Kit: brief, role reqs, 4 question categories, flashcards, schedule.
-3. (1:40) Coverage second pass: show `coverage.passes: 2` + gap-fill log on a JD with an uncovered must.
-4. (2:10) Edit a question + drag-reorder + move category → regenerate that category → hand edit survives (pinned badge).
-5. (2:50) Practice: reveal, Shaky/OK/Solid, progress bar, least-confident queue; weak-spots report.
-6. (3:20) One defended decision: schedule + coverage in CODE, not the model (deterministic, testable, honest on thin inputs).
+(`BATCH_TIMEOUT`). CI: `.github/workflows/ci.yml` runs typecheck + lint + tests.
