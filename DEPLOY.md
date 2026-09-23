@@ -12,12 +12,13 @@
 2. Environment (dashboard, secrets):
    `GROQ_API_KEY`, `MONGODB_URI`, `SESSION_SECRET` (generate), `FRONTEND_URL=https://<vercel>.vercel.app`,
    `GROQ_MODEL=openai/gpt-oss-20b`, `ALLOW_LOCALHOST=false`, `GROQ_DELAY_MS=500`, `NODE_ENV=production`.
+   Backend URL: `https://ai-interview-prep-kit-od5e.onrender.com`
 3. Note cold starts (~50s): frontend SSE + polling fallback covers it; `GET /api/health` is the health check.
 4. `app.set('trust proxy', 1)` is already set so Secure cookies + rate-limit IPs are correct.
 
 ## 3. Frontend on Vercel
 1. Import repo, Root Directory = `frontend`.
-2. Env: `API_URL=https://<render-service>.onrender.com` (used by `next.config.ts` rewrites `/api/*`).
+2. Env: `API_URL=https://ai-interview-prep-kit-od5e.onrender.com` (used by `next.config.ts` rewrites `/api/*`). Already set in `frontend/vercel.json`; dashboard env also works.
 3. Deploy. Browser calls stay same-origin; session cookie is first-party (`SameSite=Lax`).
 
 ## 4. Verify prod

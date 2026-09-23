@@ -3,6 +3,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "env": {
-    "API_URL": "https://YOUR-RENDER-SERVICE.onrender.com"
+    "API_URL": "https://ai-interview-prep-kit-od5e.onrender.com"
   }
 }

@@ -7,6 +7,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type DragEndEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -167,7 +168,7 @@ export default function QuestionList({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
-        onDragEnd={(e) => {
+        onDragEnd={(e: DragEndEvent) => {
           const { active, over } = e;
           if (over && active.id !== over.id) {
             const ids = questions.map((q) => q.id);

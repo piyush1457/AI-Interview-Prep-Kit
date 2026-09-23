@@ -23,7 +23,7 @@ services:
         sync: false # 64-hex (secret)
         generateValue: true
       - key: FRONTEND_URL
-        value: https://YOUR-VERCEL-APP.vercel.app # set after Vercel deploy
+        value: https://ai-interview-prep-kit.vercel.app # update to your actual Vercel domain
       - key: ALLOW_LOCALHOST
         value: "false"
       - key: GROQ_DELAY_MS
