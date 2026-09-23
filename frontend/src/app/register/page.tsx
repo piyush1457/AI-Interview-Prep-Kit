@@ -8,16 +8,16 @@ import Field from "@/components/atoms/Field";
 
 function errorText(e: unknown): string {
   if (e instanceof ApiError) {
-    if (e.code === "AUTH") return "Invalid email or password.";
-    if (e.status === 429) return "Too many attempts — try again in a few minutes.";
+    if (e.status === 409) return "That email is already registered — try signing in.";
     if (e.code === "VALIDATION") return e.message || "Check your details and try again.";
+    if (e.status === 429) return "Too many attempts — try again in a few minutes.";
     return e.message;
   }
   if (e instanceof Error) return e.message;
   return "Something went wrong — try again.";
 }
 
-function LoginForm() {
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -27,10 +27,14 @@ function LoginForm() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
     setPending(true);
     setError("");
     try {
-      await api.login(email, password);
+      await api.register(email, password);
       router.replace(searchParams.get("next") || "/kits");
       router.refresh();
     } catch (err: unknown) {
@@ -46,8 +50,8 @@ function LoginForm() {
           PrepKit
         </Link>
         <form className="card bg-paper" onSubmit={submit} noValidate>
-          <p className="eyebrow">Welcome back</p>
-          <h1 className="prose-display mt-2 text-3xl">Sign in</h1>
+          <p className="eyebrow">Free · no card needed</p>
+          <h1 className="prose-display mt-2 text-3xl">Create account</h1>
           <div className="mt-6 flex flex-col gap-4">
             <Field label="Email">
               {(id) => (
@@ -63,14 +67,15 @@ function LoginForm() {
                 />
               )}
             </Field>
-            <Field label="Password">
+            <Field label="Password" hint="At least 6 characters.">
               {(id) => (
                 <input
                   id={id}
                   className="input"
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   required
+                  minLength={6}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -84,12 +89,12 @@ function LoginForm() {
             </p>
           )}
           <Button className="mt-6 w-full" type="submit" pending={pending}>
-            Sign in
+            Create account
           </Button>
           <p className="mt-5 text-center text-sm text-pebble">
-            Need an account?{" "}
-            <Link href="/register" className="font-medium text-charcoal underline">
-              Register
+            Have an account?{" "}
+            <Link href="/login" className="font-medium text-charcoal underline">
+              Sign in
             </Link>
           </p>
         </form>
@@ -98,10 +103,10 @@ function LoginForm() {
   );
 }
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <Suspense>
-      <LoginForm />
+      <RegisterForm />
     </Suspense>
   );
 }

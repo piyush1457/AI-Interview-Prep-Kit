@@ -1,8 +1,12 @@
 export default function ThinKitNotice({ reqCount }: { reqCount: number }) {
   return (
-    <div className="rounded border border-amber-300 bg-amber-50 p-4 text-sm" role="note">
-      <strong>Thin kit, on purpose.</strong> The description yielded only {reqCount} requirement(s),
-      so this kit is intentionally thin rather than fabricated. Add details to the posting or edit below.
+    <div className="card border-warning bg-paper" role="status">
+      <p className="eyebrow text-warning">Thin input · {reqCount} requirement{reqCount === 1 ? "" : "s"} found</p>
+      <p className="mt-2 text-sm text-graphite">
+        The job description looks short, so the kit is intentionally limited — we&apos;d rather ship an
+        honest outline than invent details. Paste a fuller posting and generate again for deeper
+        coverage.
+      </p>
     </div>
   );
 }

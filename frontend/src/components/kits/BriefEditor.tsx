@@ -1,35 +1,77 @@
 "use client";
 import { useState } from "react";
+import type { BriefSave, CompanyBrief } from "@/lib/types";
+import Button from "@/components/atoms/Button";
+import Field from "@/components/atoms/Field";
 
-export default function BriefEditor({ brief, onSave }: { brief: any; onSave: (b: any) => void }) {
+export default function BriefEditor({
+  brief,
+  onSave,
+}: {
+  brief?: CompanyBrief | null;
+  onSave: (b: BriefSave) => void;
+}) {
   const [summary, setSummary] = useState(brief?.summary || "");
   const [what, setWhat] = useState(brief?.what_they_do || "");
+  const [pending, setPending] = useState(false);
+
   return (
-    <section className="rounded border p-4" aria-label="Company brief">
-      <div className="flex items-center justify-between">
-        <h2 className="font-semibold">Company brief</h2>
-        <button
-          className="rounded border px-3 py-1 text-sm"
-          data-regen="brief"
-          onClick={() => onSave({ regen: "brief" })}
-        >
-          Regenerate brief
-        </button>
+    <section className="card" aria-label="Company brief">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="eyebrow">01 · Company brief</p>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            data-regen="brief"
+            onClick={() => onSave({ regen: "brief" })}
+          >
+            Regenerate
+          </Button>
+          <Button
+            size="sm"
+            pending={pending}
+            onClick={() => {
+              setPending(true);
+              onSave({ summary, what_they_do: what, _meta: { origin: "edited" } });
+              setTimeout(() => setPending(false), 400);
+            }}
+          >
+            Save brief
+          </Button>
+        </div>
       </div>
-      <label className="mt-3 block text-sm font-medium">Summary
-        <textarea value={summary} onChange={(e) => setSummary(e.target.value)} rows={3}
-          className="mt-1 w-full rounded border p-2" />
-      </label>
-      <label className="mt-3 block text-sm font-medium">What they do
-        <textarea value={what} onChange={(e) => setWhat(e.target.value)} rows={2}
-          className="mt-1 w-full rounded border p-2" />
-      </label>
-      <button
-        className="mt-3 rounded bg-black px-4 py-2 text-white"
-        onClick={() => onSave({ summary, what_they_do: what, _meta: { origin: "edited" } })}
-      >
-        Save brief
-      </button>
+      <div className="mt-4 flex flex-col gap-4">
+        <Field label="Summary">
+          {(id) => (
+            <textarea
+              id={id}
+              className="textarea"
+              rows={3}
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              aria-label="Summary"
+            />
+          )}
+        </Field>
+        <Field label="What they do">
+          {(id) => (
+            <textarea
+              id={id}
+              className="textarea"
+              rows={2}
+              value={what}
+              onChange={(e) => setWhat(e.target.value)}
+              aria-label="What they do"
+            />
+          )}
+        </Field>
+      </div>
+      {brief?._meta?.origin === "edited" && (
+        <p className="mt-3">
+          <span className="badge badge-accent">hand-edited · survives regen</span>
+        </p>
+      )}
     </section>
   );
 }

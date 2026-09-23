@@ -1,64 +1,122 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import type { Flashcard } from "@/lib/types";
 import { orderPractice } from "@/lib/kitState";
+import Button from "@/components/atoms/Button";
+import EmptyState from "@/components/atoms/EmptyState";
 
-export default function FlashcardRunner({ kitId, cards }: { kitId: string; cards: any[] }) {
+const RATINGS = [
+  { c: 1, label: "Shaky", cls: "btn-outline text-danger border-danger/40 hover:bg-[#fdecec]" },
+  { c: 2, label: "OK", cls: "btn-outline text-warning border-warning/40 hover:bg-[#fdf3e3]" },
+  { c: 3, label: "Solid", cls: "btn-outline text-success border-success/40 hover:bg-[#e8f5ec]" },
+];
+
+export default function FlashcardRunner({ kitId, cards }: { kitId: string; cards: Flashcard[] }) {
   const [confidence, setConfidence] = useState<Record<string, number>>({});
   const [idx, setIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const queue = useMemo(() => orderPractice(cards, confidence), [cards, confidence]);
-  const card = cards.find((c) => c.id === queue[idx]) || cards[0];
+  const card: Flashcard | undefined = cards.find((c) => c.id === queue[idx]) ?? cards[0];
 
   useEffect(() => {
-    api.practiceProgress(kitId).then((p: any) => setConfidence(p.confidence || {})).catch(() => {});
+    api
+      .practiceProgress(kitId)
+      .then((p) => setConfidence(p.confidence ?? {}))
+      .catch(() => {
+        /* offline-tolerant: start with empty confidence */
+      });
   }, [kitId]);
+
+  const next = () => {
+    setRevealed(false);
+    setIdx((i) => Math.min(queue.length - 1, i + 1));
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (e.key === "ArrowRight") next();
       if (e.key === "ArrowLeft") setIdx((i) => Math.max(0, i - 1));
-      if (e.key === " " || e.key === "Enter") { e.preventDefault(); setRevealed((r) => !r); }
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        setRevealed((r) => !r);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const next = () => { setRevealed(false); setIdx((i) => Math.min(queue.length - 1, i + 1)); };
-
   const rate = async (c: number) => {
     if (!card) return;
-    const nextConf = { ...confidence, [card.id]: c };
-    setConfidence(nextConf);
-    try { await api.recordPractice(kitId, card.id, c); } catch {}
+    setConfidence((prev) => ({ ...prev, [card.id]: c }));
+    try {
+      await api.recordPractice(kitId, card.id, c);
+    } catch {
+      /* keep local confidence even if POST fails */
+    }
     next();
   };
 
-  if (!card) return <p>No flashcards yet.</p>;
+  if (!card)
+    return (
+      <EmptyState
+        title="No flashcards yet"
+        body="Flashcards are derived from the must-have requirements — generate a kit first, then come back to drill."
+      />
+    );
+
   const covered = Object.keys(confidence).length;
+  const pct = (covered / Math.max(1, cards.length)) * 100;
+
   return (
-    <div className="rounded border p-6">
-      <div className="flex justify-between text-sm text-zinc-500">
-        <span>Card {idx + 1}/{queue.length} · covered {covered}/{cards.length}</span>
-        <span>←/→ navigate · Space reveal</span>
+    <section className="card bg-paper" aria-label="Flashcard runner">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="eyebrow">
+          Card {idx + 1} / {queue.length} · covered {covered}/{cards.length}
+        </p>
+        <p className="font-mono text-[11px] uppercase tracking-wider text-ash">
+          ←/→ navigate · space reveal
+        </p>
       </div>
-      <div className="mt-2 h-2 rounded bg-zinc-200">
-        <div className="h-full rounded bg-green-600" style={{ width: `${(covered / Math.max(1, cards.length)) * 100}%` }} />
+
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-flint">
+        <div
+          className="h-full rounded-full bg-charcoal transition-all duration-300"
+          style={{ width: `${pct}%` }}
+        />
       </div>
-      <h3 className="mt-6 text-xl font-semibold">{card.front}</h3>
-      {revealed ? (
-        <p className="mt-4 whitespace-pre-wrap text-sm">{card.back}</p>
-      ) : (
-        <button className="mt-4 rounded border px-4 py-2" onClick={() => setRevealed(true)}>Reveal answer</button>
-      )}
-      <div className="mt-6 flex gap-2" role="group" aria-label="Confidence">
-        {[1, 2, 3].map((c) => (
-          <button key={c} onClick={() => rate(c)}
-            className={`rounded px-4 py-2 text-white ${c === 1 ? "bg-red-600" : c === 2 ? "bg-amber-500" : "bg-green-600"}`}>
-            {c === 1 ? "Shaky" : c === 2 ? "OK" : "Solid"}
+
+      <div className="mt-8 min-h-[140px]">
+        <h3 className="prose-display text-2xl leading-snug sm:text-3xl">{card.front}</h3>
+        {revealed ? (
+          <p className="mt-5 whitespace-pre-wrap border-t border-flint pt-5 text-[15px] leading-relaxed text-graphite">
+            {card.back}
+          </p>
+        ) : (
+          <Button className="mt-5" variant="outline" onClick={() => setRevealed(true)}>
+            Reveal answer
+          </Button>
+        )}
+      </div>
+
+      <div className="mt-7 flex flex-wrap gap-2" role="group" aria-label="Rate your confidence">
+        {RATINGS.map((r) => (
+          <button
+            key={r.c}
+            className={`btn ${r.cls}`}
+            onClick={() => void rate(r.c)}
+            disabled={!revealed}
+            title={revealed ? undefined : "Reveal the answer first"}
+          >
+            {r.label}
           </button>
         ))}
       </div>
-    </div>
+      {!revealed && (
+        <p className="mt-2 font-mono text-[11px] text-ash">Reveal the answer to rate it</p>
+      )}
+    </section>
   );
 }
