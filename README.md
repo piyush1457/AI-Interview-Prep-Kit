@@ -69,7 +69,7 @@ one call per pipeline step through a shared `PQueue` (concurrency 1 + 500 ms gap
 browser (Vercel origin) --same-site /api/*--> Next rewrites --> Express (Render)
 POST /api/kits {jd, company_url, days} -> dedupe-check -> 202 {kitId, jobId}
   -> worker runPipeline() -> SSE /api/kits/:id/stream (steps + polling fallback)
-PATCH /api/kits/:id {kit, If-Match: version} (409 on stale)
+PATCH /api/kits/:id {kit, X-Kits-Version: version} (409 on stale)
 POST /api/kits/:id/regenerate {scope} | POST /:id/practice | GET /:id/weak-spots
 POST /api/kits/batch (in-app multi-role upload, 20-row cap)
 CLI backend/src/evaluate.ts imports runPipeline (p-limit 3, wall-clock, _meta strip)
@@ -114,7 +114,9 @@ Every question/flashcard/brief carries `_meta.origin: generated | edited | pinne
 (`tagGenerated` on creation). Hand edits set `edited` (implies pinned); category moves keep
 the flag. `mergeRegen` on single-section regen drops only stale *generated* items of that
 scope and keeps everything pinned - proven by `concurrency.test.ts`.
-Optimistic concurrency: `Kit.version` + `If-Match` on PATCH/regenerate; stale writers get
+Optimistic concurrency: `Kit.version` + `X-Kits-Version` on PATCH/regenerate (custom header;
+`If-Match` breaks behind Vercel's edge, which enforces it as an ETag precondition and returns
+a plain-text 412); stale writers get
 409 + the fresh doc (“reloaded, re-apply”) instead of a silent clobber. `_meta` is stripped
 (`stripMeta`) and re-validated before any batch output, so Appendix B stays exact.
 
@@ -186,6 +188,6 @@ npm run typecheck                   # all 3 workspaces
 ```
 
 Suites: schedule, coverage, kit-validate, llm-retry, ssrf-redirect, dns-rebinding,
-dedupe, dedupe-bypass, batch-upload, kits-ownership (If-Match/409/owner), concurrency (pinned regen), batch-concurrency
+dedupe, dedupe-bypass, batch-upload, kits-ownership (version header/409/owner), concurrency (pinned regen), batch-concurrency
 (shared-queue serialization), batch-output-hygiene (`_meta`), batch-wall-clock
 (`BATCH_TIMEOUT`). CI: `.github/workflows/ci.yml` runs typecheck + lint + tests.

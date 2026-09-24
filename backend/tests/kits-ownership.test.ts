@@ -17,7 +17,7 @@ vi.mock("../src/services/runPipeline.js", () => ({
 
 import { Kit } from "../src/models/Kit.js";
 import kits from "../src/routes/kits.js";
-import { parseIfMatch, sanitizePatchMeta } from "../src/routes/kits.js";
+import { parseIfMatch, parseVersionHeader, sanitizePatchMeta } from "../src/routes/kits.js";
 
 function app() {
   const a = express();
@@ -57,7 +57,7 @@ describe("kits ownership + concurrency", () => {
     expect(Kit.findOne).toHaveBeenCalledWith({ _id: "some-id", owner: "owner-1" });
   });
 
-  it("PATCH without If-Match returns 428", async () => {
+  it("PATCH without version header returns 428", async () => {
     const res = await fetch(`${base}/api/kits/k1`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -68,12 +68,12 @@ describe("kits ownership + concurrency", () => {
     expect(Kit.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
-  it("PATCH with stale If-Match returns 409 + fresh doc, does not write", async () => {
+  it("PATCH with stale X-Kits-Version returns 409 + fresh doc, does not write", async () => {
     (Kit.findOneAndUpdate as any).mockResolvedValue(null);
     (Kit.findOne as any).mockResolvedValue({ _id: "k1", version: 9, kit: minimalKit() });
     const res = await fetch(`${base}/api/kits/k1`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "If-Match": "3" },
+      headers: { "Content-Type": "application/json", "X-Kits-Version": "3" },
       body: JSON.stringify({ kit: minimalKit() }),
     });
     expect(res.status).toBe(409);
@@ -88,12 +88,12 @@ describe("kits ownership + concurrency", () => {
     );
   });
 
-  it("PATCH with matching If-Match writes atomically and bumps version", async () => {
+  it("PATCH with matching X-Kits-Version writes atomically and bumps version", async () => {
     const saved = { _id: "k1", version: 4, kit: minimalKit() };
     (Kit.findOneAndUpdate as any).mockResolvedValue(saved);
     const res = await fetch(`${base}/api/kits/k1`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "If-Match": "3" },
+      headers: { "Content-Type": "application/json", "X-Kits-Version": "3" },
       body: JSON.stringify({ kit: minimalKit() }),
     });
     expect(res.status).toBe(200);
@@ -109,10 +109,26 @@ describe("kits ownership + concurrency", () => {
   it("PATCH rejects unknown kit body", async () => {
     const res = await fetch(`${base}/api/kits/k1`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "If-Match": "1" },
+      headers: { "Content-Type": "application/json", "X-Kits-Version": "1" },
       body: JSON.stringify({}),
     });
     expect(res.status).toBe(400);
+  });
+
+  it("PATCH accepts legacy If-Match header as version fallback", async () => {
+    const saved = { _id: "k1", version: 4, kit: minimalKit() };
+    (Kit.findOneAndUpdate as any).mockResolvedValue(saved);
+    const res = await fetch(`${base}/api/kits/k1`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "If-Match": "3" },
+      body: JSON.stringify({ kit: minimalKit() }),
+    });
+    expect(res.status).toBe(200);
+    expect(Kit.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: "k1", owner: "owner-1", version: 3 },
+      expect.anything(),
+      expect.anything()
+    );
   });
 });
 
@@ -127,6 +143,17 @@ describe("parseIfMatch", () => {
     expect(parseIfMatch("-1")).toBeNull();
     expect(parseIfMatch("1.5")).toBeNull();
     expect(parseIfMatch(NaN)).toBeNull();
+  });
+});
+
+describe("parseVersionHeader", () => {
+  it("prefers X-Kits-Version, falls back to If-Match", () => {
+    expect(parseVersionHeader({ "x-kits-version": "7" })).toBe(7);
+    expect(parseVersionHeader({ "if-match": "5" })).toBe(5);
+    expect(parseVersionHeader({ "x-kits-version": "7", "if-match": "5" })).toBe(7);
+    expect(parseVersionHeader({ "x-kits-version": "", "if-match": "5" })).toBe(5);
+    expect(parseVersionHeader({})).toBeNull();
+    expect(parseVersionHeader({ "x-kits-version": "abc", "if-match": "x" })).toBeNull();
   });
 });
 

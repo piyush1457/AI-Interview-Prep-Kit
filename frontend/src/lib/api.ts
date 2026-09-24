@@ -47,7 +47,9 @@ async function req<T>(path: string, init?: VersionedInit): Promise<T> {
         code: "VALIDATION",
       });
     }
-    finalHeaders["If-Match"] = String(version);
+    // Custom header, NOT If-Match: Vercel's edge evaluates If-Match against
+    // response ETags and turns successful saves into a plain-text 412.
+    finalHeaders["X-Kits-Version"] = String(version);
   }
 
   const res = await fetch(path, { ...rest, headers: finalHeaders, credentials: "include" });

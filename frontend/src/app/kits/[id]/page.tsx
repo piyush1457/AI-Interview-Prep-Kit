@@ -129,7 +129,7 @@ function BuilderContent({ id }: { id: string }) {
     if (!doc?.kit) return;
     const nextKit = fn(structuredClone(doc.kit));
     setDoc({ ...doc, kit: nextKit });
-    // If-Match is required server-side; never send a zero/missing version.
+    // Server requires a positive version header; never send zero/missing.
     const ver = Number(doc.version);
     if (!Number.isInteger(ver) || ver < 1) {
       setSaveFailed(true);
@@ -151,7 +151,7 @@ function BuilderContent({ id }: { id: string }) {
     setRegenScope(scopeKey);
     setErr("");
     try {
-      // Flush any debounced PATCH first so If-Match uses the server version.
+      // Flush any debounced PATCH first so the version header uses the server version.
       const version = await flushPendingSave();
       if (!Number.isInteger(version) || version < 1) {
         setErr("Could not determine kit version - reload and try again.");

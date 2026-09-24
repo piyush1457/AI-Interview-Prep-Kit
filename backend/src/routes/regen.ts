@@ -7,7 +7,7 @@ import { Kit } from "../models/Kit.js";
 import { generateBrief, generateCategory, type Category } from "../services/generation.js";
 import { allocateSchedule } from "../services/scheduling.js";
 import { findUncovered } from "../services/coverage.js";
-import { mergeRegen, parseIfMatch } from "./kits.js";
+import { mergeRegen, parseVersionHeader } from "./kits.js";
 
 const r = Router();
 r.use(requireAuth);
@@ -18,14 +18,14 @@ const scopeSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("schedule") }),
 ]);
 
-// POST /api/kits/:id/regenerate {scope, If-Match: version}
+// POST /api/kits/:id/regenerate {scope, X-Kits-Version: version}
 // Regenerates ONE section; pinned/edited items elsewhere survive via mergeRegen.
 r.post("/:id/regenerate", asyncHandler(async (req: any, res) => {
   const s = scopeSchema.safeParse(req.body?.scope);
   if (!s.success) return res.status(400).json({ code: "VALIDATION", message: s.error.message });
-  const match = parseIfMatch(req.headers["if-match"]);
+  const match = parseVersionHeader(req.headers);
   if (match == null) {
-    return res.status(428).json({ code: "VALIDATION", message: "If-Match version required" });
+    return res.status(428).json({ code: "VALIDATION", message: "X-Kits-Version header required" });
   }
   const k: any = await Kit.findOne({ _id: req.params.id, owner: req.userId });
   if (!k) return res.status(404).json({ code: "VALIDATION", message: "not found" });

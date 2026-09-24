@@ -17,7 +17,7 @@ npm run test        # vitest run (kitState)
 
 - `src/app/` - routes: `/`, `/login`, `/register`, `/kits`, `/kits/[id]`, `/kits/[id]/practice`
 - `src/components/atoms|organisms|kits|practice` - design system + feature UI
-- `src/lib/api.ts` - same-origin fetch client (If-Match on PATCH/regenerate)
+- `src/lib/api.ts` - same-origin fetch client (X-Kits-Version on PATCH/regenerate)
 - `src/lib/kitState.ts` - pure builder helpers (unit-tested)
 - `src/app/globals.css` - Apollo `@theme` tokens + component classes
 

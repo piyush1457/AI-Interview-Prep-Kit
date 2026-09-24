@@ -26,12 +26,21 @@ export function sanitizePatchMeta(patch: any): any {
   return kit;
 }
 
-/** Parse If-Match header: returns a positive integer version or null if missing/invalid. */
+/** Parse a version header value: returns a positive integer or null if missing/invalid. */
 export function parseIfMatch(header: unknown): number | null {
   if (header == null || header === "") return null;
   const raw = Array.isArray(header) ? header[0] : header;
   const n = Number(raw);
   return Number.isInteger(n) && n >= 1 ? n : null;
+}
+
+/**
+ * Kit concurrency version from X-Kits-Version (preferred) or legacy If-Match.
+ * If-Match is only a fallback: Vercel's edge enforces RFC 7232 on it and
+ * returns a plain-text 412 that can never match our integer version.
+ */
+export function parseVersionHeader(headers: Record<string, unknown>): number | null {
+  return parseIfMatch(headers["x-kits-version"] || headers["if-match"]);
 }
 
 // Tag every generated item so later regens can preserve hand edits.
@@ -172,11 +181,11 @@ r.get("/:id/stream", asyncHandler(async (req: any, res) => {
   req.on("close", () => clearInterval(timer));
 }));
 
-// PATCH: requires If-Match; atomic version CAS so two tabs cannot clobber.
+// PATCH: requires X-Kits-Version; atomic version CAS so two tabs cannot clobber.
 r.patch("/:id", asyncHandler(async (req: any, res) => {
-  const match = parseIfMatch(req.headers["if-match"]);
+  const match = parseVersionHeader(req.headers);
   if (match == null) {
-    return res.status(428).json({ code: "VALIDATION", message: "If-Match version required" });
+    return res.status(428).json({ code: "VALIDATION", message: "X-Kits-Version header required" });
   }
   const patch = req.body?.kit;
   if (!patch) return res.status(400).json({ code: "VALIDATION", message: "kit patch required" });
@@ -185,7 +194,7 @@ r.patch("/:id", asyncHandler(async (req: any, res) => {
   if (!v.success)
     return res.status(400).json({ code: "VALIDATION", message: v.error.message.slice(0, 300) });
   const sanitized = sanitizePatchMeta(patch);
-  // Atomic compare-and-set: only write when stored version still equals If-Match.
+  // Atomic compare-and-set: only write when stored version still equals X-Kits-Version.
   const updated = await Kit.findOneAndUpdate(
     { _id: req.params.id, owner: req.userId, version: match },
     { $set: { kit: sanitized }, $inc: { version: 1 } },
